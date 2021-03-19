@@ -7,6 +7,12 @@ extension Array {
         return array
     }
     
+    public func last(transform: (Element) -> Element) -> Self {
+        var array = self
+        array[count] = transform(array[count])
+        return array
+    }
+    
     public func moving(from: Int, to: Int) -> Self {
         var array = self
         array.insert(array.remove(at: from), at: Swift.min(to, array.count))
