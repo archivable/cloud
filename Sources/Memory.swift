@@ -15,7 +15,6 @@ public struct Memory<M> where M : Manifest {
         let store = PassthroughSubject<M.A, Never>()
         let remote = PassthroughSubject<M.A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
-        let url = M.file.url
         let type = "Archive"
         let asset = "asset"
         
@@ -140,7 +139,7 @@ public struct Memory<M> where M : Manifest {
             .debounce(for: .seconds(2), scheduler: queue)
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: url)
+                record[asset] = CKAsset(fileURL: M.file)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInitiated
                 operation.configuration.timeoutIntervalForRequest = 20
@@ -185,7 +184,7 @@ public struct Memory<M> where M : Manifest {
             .debounce(for: .seconds(1), scheduler: queue)
             .map(\.data)
             .sink {
-                try? $0.write(to: url, options: .atomic)
+                try? $0.write(to: M.file, options: .atomic)
             }
             .store(in: &subs)
     }
@@ -211,17 +210,7 @@ public struct Memory<M> where M : Manifest {
     }
     
     public func load() {
-        local.send(try? Data(contentsOf: M.file.url)
+        local.send(try? Data(contentsOf: M.file)
                             .mutating(transform: M.A.init(data:)))
-    }
-}
-
-private extension String {
-    var url: URL {
-        var url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(self)
-        var resources = URLResourceValues()
-        resources.isExcludedFromBackup = true
-        try? url.setResourceValues(resources)
-        return url
     }
 }
