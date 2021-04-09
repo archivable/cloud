@@ -178,10 +178,10 @@ public struct Memory<M> where M : Manifest {
             .store(in: &subs)
         
         store
+            .debounce(for: .seconds(1), scheduler: queue)
             .removeDuplicates {
                 $0 >= $1
             }
-            .debounce(for: .seconds(1), scheduler: queue)
             .map(\.data)
             .sink {
                 try? $0.write(to: M.file, options: .atomic)
