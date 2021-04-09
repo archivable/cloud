@@ -9,7 +9,7 @@ public struct Memory<M> where M : Manifest {
     private let local = PassthroughSubject<M.A?, Never>()
     private let queue = DispatchQueue(label: "", qos: .utility)
     
-    init() {
+    public init() {
         let container = CKContainer(identifier: M.container)
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<M.A, Never>()
