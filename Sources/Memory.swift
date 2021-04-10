@@ -1,19 +1,21 @@
 import CloudKit
 import Combine
 
-public struct Memory<M> where M : Manifest {
-    public let archive = PassthroughSubject<M.A, Never>()
-    public let save = PassthroughSubject<M.A, Never>()
+public struct Memory<R> where R : Repo {
+    public let archive = PassthroughSubject<R.A, Never>()
+    public let save = PassthroughSubject<R.A, Never>()
     public let pull = PassthroughSubject<Void, Never>()
     private var subs = Set<AnyCancellable>()
-    private let local = PassthroughSubject<M.A?, Never>()
+    private let local = PassthroughSubject<R.A?, Never>()
     private let queue = DispatchQueue(label: "", qos: .utility)
     
     public init() {
-        let container = CKContainer(identifier: M.container)
+        guard R.self != Testable.self else { return }
+        
+        let container = CKContainer(identifier: R.container)
         let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<M.A, Never>()
-        let remote = PassthroughSubject<M.A?, Never>()
+        let store = PassthroughSubject<R.A, Never>()
+        let remote = PassthroughSubject<R.A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let type = "Archive"
         let asset = "asset"
@@ -70,7 +72,7 @@ public struct Memory<M> where M : Manifest {
                     if status == .available {
                         container.fetchUserRecordID { user, _ in
                             user.map {
-                                record.send(.init(recordName: M.prefix + $0.recordName))
+                                record.send(.init(recordName: R.prefix + $0.recordName))
                             }
                         }
                     }
@@ -102,7 +104,7 @@ public struct Memory<M> where M : Manifest {
                         ($0[asset] as? CKAsset).flatMap {
                             $0.fileURL.flatMap {
                                 (try? Data(contentsOf: $0)).map {
-                                    $0.mutating(transform: M.A.init(data:))
+                                    $0.mutating(transform: R.A.init(data:))
                                 }
                             }
                         }
@@ -139,7 +141,7 @@ public struct Memory<M> where M : Manifest {
             .debounce(for: .seconds(2), scheduler: queue)
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: M.file)
+                record[asset] = CKAsset(fileURL: R.file)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInitiated
                 operation.configuration.timeoutIntervalForRequest = 20
@@ -184,7 +186,7 @@ public struct Memory<M> where M : Manifest {
             }
             .map(\.data)
             .sink {
-                try? $0.write(to: M.file, options: .atomic)
+                try? $0.write(to: R.file, options: .atomic)
             }
             .store(in: &subs)
     }
@@ -210,7 +212,7 @@ public struct Memory<M> where M : Manifest {
     }
     
     public func load() {
-        local.send(try? Data(contentsOf: M.file)
-                            .mutating(transform: M.A.init(data:)))
+        local.send(try? Data(contentsOf: R.file)
+                            .mutating(transform: R.A.init(data:)))
     }
 }
