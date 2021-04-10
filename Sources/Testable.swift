@@ -1,16 +1,16 @@
 import Foundation
 
-struct Testable: Repo {
-    typealias A = Archive
-    static let memory = Memory<Self>()
-    static let file = URL(string: "")!
-    static let container = ""
-    static let prefix = ""
+public struct Testable: Repo {
+    public typealias A = Archive
+    public static let memory = Memory<Self>()
+    public static let file = URL(string: "")!
+    public static let container = ""
+    public static let prefix = ""
     
-    struct Archive: Archivable, Dateable {
-        static func < (lhs: Archive, rhs: Archive) -> Bool { false }
-        let date = Date()
-        let data = Data()
-        init(data: inout Data) { }
+    public struct Archive: Archivable, Dateable {
+        public static func < (lhs: Archive, rhs: Archive) -> Bool { false }
+        public let date = Date()
+        public let data = Data()
+        public init(data: inout Data) { }
     }
 }
