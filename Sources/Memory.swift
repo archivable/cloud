@@ -10,8 +10,6 @@ public struct Memory<R> where R : Repo {
     private let queue = DispatchQueue(label: "", qos: .utility)
     
     public init() {
-        guard R.self != Testable.self else { return }
-        
         let container = CKContainer(identifier: R.container)
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<R.A, Never>()
