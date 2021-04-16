@@ -12,22 +12,17 @@ public struct Memory<R> where R : Repo {
     public init() {
         let container = CKContainer(identifier: R.container)
         let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<R.A, Never>()
+        let store = PassthroughSubject<(R.A, Bool), Never>()
         let remote = PassthroughSubject<R.A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let type = "Archive"
         let asset = "asset"
         
         save
-            .subscribe(store)
-            .store(in: &subs)
-        
-        save
-            .removeDuplicates {
-                $0 >= $1
+            .map {
+                ($0, true)
             }
-            .map { _ in }
-            .subscribe(push)
+            .subscribe(store)
             .store(in: &subs)
         
         local
@@ -159,7 +154,7 @@ public struct Memory<R> where R : Repo {
                 $0.0 == nil ? true : $0.0! < $0.1
             }
             .map {
-                $1
+                ($1, false)
             }
             .subscribe(store)
             .store(in: &subs)
@@ -180,11 +175,15 @@ public struct Memory<R> where R : Repo {
         store
             .debounce(for: .seconds(1), scheduler: queue)
             .removeDuplicates {
-                $0 >= $1
+                $0.0 >= $1.0
             }
-            .map(\.data)
             .sink {
-                try? $0.write(to: R.file, options: .atomic)
+                do {
+                    try $0.0.data.write(to: R.file, options: .atomic)
+                    if $0.1 {
+                        push.send()
+                    }
+                } catch { }
             }
             .store(in: &subs)
     }
