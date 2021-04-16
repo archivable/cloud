@@ -173,7 +173,7 @@ public struct Memory<R> where R : Repo {
             .store(in: &subs)
         
         store
-            .debounce(for: .seconds(1), scheduler: queue)
+            .debounce(for: .seconds(0.7), scheduler: queue)
             .removeDuplicates {
                 $0.0 >= $1.0
             }
