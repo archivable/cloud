@@ -195,8 +195,9 @@ public struct Memory<R> where R : Repo {
         return .init { promise in
             var sub: AnyCancellable?
             sub = archive
+                    .dropFirst()
                     .map { _ in }
-                    .timeout(.seconds(15), scheduler: queue)
+                    .timeout(.seconds(25), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
                         promise(.success(false))
