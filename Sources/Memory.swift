@@ -2,7 +2,7 @@ import CloudKit
 import Combine
 
 public struct Memory<R> where R : Repo {
-    public let archive = PassthroughSubject<R.A, Never>()
+    public let archive = CurrentValueSubject<R.A, Never>(.new)
     public let save = PassthroughSubject<R.A, Never>()
     public let pull = PassthroughSubject<Void, Never>()
     private var subs = Set<AnyCancellable>()

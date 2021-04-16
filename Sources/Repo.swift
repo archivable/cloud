@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 public protocol Repo {
-    associatedtype A : Archivable, Dateable
+    associatedtype A : Archived
     static var memory: Memory<Self> { get }
     static var file: URL { get }
     static var container: String { get }
