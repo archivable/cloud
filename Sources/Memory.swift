@@ -186,6 +186,9 @@ public struct Memory<R> where R : Repo {
                 } catch { }
             }
             .store(in: &subs)
+        
+        local.send(try? Data(contentsOf: R.file)
+                            .mutating(transform: R.A.init(data:)))
     }
     
     public var receipt: Future<Bool, Never> {
@@ -207,10 +210,5 @@ public struct Memory<R> where R : Repo {
                     }
             pull.send()
         }
-    }
-    
-    public func load() {
-        local.send(try? Data(contentsOf: R.file)
-                            .mutating(transform: R.A.init(data:)))
     }
 }
