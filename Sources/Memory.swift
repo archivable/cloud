@@ -131,7 +131,6 @@ public struct Memory<R> where R : Repo {
             .map { id, _ in
                 id
             }
-            .debounce(for: .seconds(2), scheduler: queue)
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
                 record[asset] = CKAsset(fileURL: R.file)
