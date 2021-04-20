@@ -159,15 +159,22 @@ public struct Memory<R> where R : Repo {
             .store(in: &subs)
         
         remote
+            .map {
+                ($0, Date())
+            }
             .combineLatest(local
                             .compactMap {
                                 $0
                             }
-                            .removeDuplicates())
+                            .merge(with: save))
             .filter {
-                $0.0 == nil ? true : $0.0! < $0.1
+                $0.0.0 == nil ? true : $0.0.0! < $0.1
             }
-            .map { _, _ in }
+            .map { remote, _ -> Date in
+                remote.1
+            }
+            .removeDuplicates()
+            .map { _ in }
             .subscribe(push)
             .store(in: &subs)
         
