@@ -179,7 +179,7 @@ public struct Memory<R> where R : Repo {
             .store(in: &subs)
         
         store
-            .debounce(for: .seconds(0.7), scheduler: queue)
+            .debounce(for: .seconds(1), scheduler: queue)
             .sink {
                 do {
                     try $0.0.data.write(to: R.file, options: .atomic)
