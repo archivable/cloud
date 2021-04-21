@@ -186,7 +186,9 @@ public struct Memory<R> where R : Repo {
                     if $0.1 {
                         push.send()
                     }
-                } catch { }
+                } catch let error {
+                    print("save error \(error)")
+                }
             }
             .store(in: &subs)
         
