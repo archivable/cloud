@@ -8,6 +8,8 @@ final class Tests: XCTestCase {
             .adding(UInt16(2))
             .adding(UInt32(3))
             .adding(UInt64(4))
+            .adding(true)
+            .adding(false)
             .compressed
             .mutating {
                 $0.decompress()
@@ -15,6 +17,8 @@ final class Tests: XCTestCase {
                 XCTAssertEqual(2, $0.uInt16())
                 XCTAssertEqual(3, $0.uInt32())
                 XCTAssertEqual(4, $0.uInt64())
+                XCTAssertEqual(true, $0.bool())
+                XCTAssertEqual(false, $0.bool())
             }
     }
 }

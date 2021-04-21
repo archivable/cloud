@@ -21,6 +21,10 @@ extension Data {
         return result
     }
     
+    public mutating func bool() -> Bool {
+        removeFirst() == 1
+    }
+    
     public mutating func uInt16() -> UInt16 {
         let result = withUnsafeBytes {
             $0.baseAddress!.bindMemory(to: UInt16.self, capacity: 1)[0]
@@ -57,6 +61,10 @@ extension Data {
         {
             adding(UInt16($0.count)) + $0
         } (Data(string.utf8))
+    }
+    
+    public func adding(_ bool: Bool) -> Self {
+        self + [bool ? 1 : 0]
     }
     
     public func adding(_ number: UInt8) -> Self {
