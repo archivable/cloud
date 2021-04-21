@@ -203,7 +203,7 @@ public struct Memory<R> where R : Repo {
             sub = archive
                     .dropFirst()
                     .map { _ in }
-                    .timeout(.seconds(25), scheduler: queue)
+                    .timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
                         promise(.success(false))
