@@ -180,9 +180,6 @@ public struct Memory<R> where R : Repo {
         
         store
             .debounce(for: .seconds(0.7), scheduler: queue)
-            .removeDuplicates {
-                $0.0 >= $1.0
-            }
             .sink {
                 do {
                     try $0.0.data.write(to: R.file, options: .atomic)
