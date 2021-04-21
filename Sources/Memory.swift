@@ -144,6 +144,10 @@ public struct Memory<R> where R : Repo {
             .store(in: &subs)
         
         local
+            .merge(with: save
+                            .map {
+                                $0 as R.A?
+                            })
             .combineLatest(remote
                             .compactMap {
                                 $0
@@ -186,9 +190,7 @@ public struct Memory<R> where R : Repo {
                     if $0.1 {
                         push.send()
                     }
-                } catch let error {
-                    print("save error \(error)")
-                }
+                } catch { }
             }
             .store(in: &subs)
         
