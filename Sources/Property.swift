@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol Archiving {
+public protocol Property {
     var data: Data { get }
     
     init(data: inout Data)

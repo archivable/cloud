@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-public protocol Repo {
+public protocol Controller {
     associatedtype A : Archived
     static var memory: Memory<Self> { get }
     static var file: URL { get }
@@ -10,7 +10,7 @@ public protocol Repo {
     static var override: PassthroughSubject<A, Never>? { get }
 }
 
-extension Repo {
+extension Controller {
     public static func save(_ archive: A) {
         guard override == nil else {
             override!.send(archive)
