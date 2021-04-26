@@ -10,6 +10,7 @@ final class Tests: XCTestCase {
             .adding(UInt64(4))
             .adding(true)
             .adding(false)
+            .adding(Date(timeIntervalSince1970: 10))
             .compressed
             .mutating {
                 $0.decompress()
@@ -19,6 +20,7 @@ final class Tests: XCTestCase {
                 XCTAssertEqual(4, $0.uInt64())
                 XCTAssertEqual(true, $0.bool())
                 XCTAssertEqual(false, $0.bool())
+                XCTAssertEqual(Date(timeIntervalSince1970: 10).timestamp, $0.date().timestamp)
             }
     }
 }

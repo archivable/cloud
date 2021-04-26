@@ -21,6 +21,10 @@ extension Data {
         return result
     }
     
+    public mutating func date() -> Date {
+        .init(timestamp: uInt32())
+    }
+    
     public mutating func bool() -> Bool {
         removeFirst() == 1
     }
@@ -61,6 +65,10 @@ extension Data {
         {
             adding(UInt16($0.count)) + $0
         } (Data(string.utf8))
+    }
+    
+    public func adding(_ date: Date) -> Self {
+        adding(date.timestamp)
     }
     
     public func adding(_ bool: Bool) -> Self {
