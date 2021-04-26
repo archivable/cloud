@@ -25,6 +25,10 @@ extension Data {
         .init(timestamp: uInt32())
     }
     
+    public mutating func uuid() -> UUID {
+        UUID(uuidString: string())!
+    }
+    
     public mutating func bool() -> Bool {
         removeFirst() == 1
     }
@@ -69,6 +73,10 @@ extension Data {
     
     public func adding(_ date: Date) -> Self {
         adding(date.timestamp)
+    }
+    
+    public func adding(_ uuid: UUID) -> Self {
+        adding(uuid.uuidString)
     }
     
     public func adding(_ bool: Bool) -> Self {
