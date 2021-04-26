@@ -11,6 +11,8 @@ final class Tests: XCTestCase {
             .adding(true)
             .adding(false)
             .adding(Date(timeIntervalSince1970: 10))
+            .adding([Date(timeIntervalSince1970: 10), .init(timeIntervalSince1970: 20)]
+                        .flatMap(\.data))
             .compressed
             .mutating {
                 $0.decompress()
@@ -21,6 +23,8 @@ final class Tests: XCTestCase {
                 XCTAssertEqual(true, $0.bool())
                 XCTAssertEqual(false, $0.bool())
                 XCTAssertEqual(Date(timeIntervalSince1970: 10).timestamp, $0.date().timestamp)
+                XCTAssertEqual(Date(timeIntervalSince1970: 10).timestamp, $0.date().timestamp)
+                XCTAssertEqual(Date(timeIntervalSince1970: 20).timestamp, $0.date().timestamp)
             }
     }
 }

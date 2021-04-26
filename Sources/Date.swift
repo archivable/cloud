@@ -8,4 +8,9 @@ extension Date {
     public var timestamp: UInt32 {
         .init(timeIntervalSince1970)
     }
+    
+    public var data: Data {
+        Data()
+            .adding(self)
+    }
 }

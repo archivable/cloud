@@ -57,7 +57,7 @@ extension Data {
         self + data
     }
     
-    public func adding(_ collection: [Self.Element]) -> Self {
+    public func adding(_ collection: [Element]) -> Self {
         self + collection
     }
     
