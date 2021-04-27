@@ -10,6 +10,10 @@ extension Data {
         return P.init(data: &mutating)
     }
     
+    public func prototype<P>(_ type: P.Type) -> P where P : Property {
+        prototype()
+    }
+    
     public func mutating<M>(transform: (inout Self) -> M) -> M {
         var mutating = self
         return transform(&mutating)

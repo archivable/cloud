@@ -53,5 +53,10 @@ final class Tests: XCTestCase {
         XCTAssertEqual(A(number: 5), Data()
                                         .adding(A(number: 5).data)
                                         .prototype())
+        
+        XCTAssertEqual(5, Data()
+                            .adding(A(number: 5).data)
+                            .prototype(A.self)
+                            .number)
     }
 }
