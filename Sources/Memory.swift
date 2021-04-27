@@ -97,7 +97,7 @@ public struct Memory<R> where R : Controller {
                         ($0[asset] as? CKAsset).flatMap {
                             $0.fileURL.flatMap {
                                 (try? Data(contentsOf: $0)).map {
-                                    $0.mutating(transform: R.A.init(data:))
+                                    $0.prototype()
                                 }
                             }
                         }
@@ -198,7 +198,7 @@ public struct Memory<R> where R : Controller {
             .store(in: &subs)
         
         local.send(try? Data(contentsOf: R.file)
-                            .mutating(transform: R.A.init(data:)))
+                            .prototype())
     }
     
     public var receipt: Future<Bool, Never> {
