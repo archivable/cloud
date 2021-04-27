@@ -1,19 +1,19 @@
 import CloudKit
 import Combine
 
-public struct Memory<R> where R : Controller {
-    public let archive = CurrentValueSubject<R.A, Never>(.new)
-    public let save = PassthroughSubject<R.A, Never>()
+public struct Cloud<C>: Clouder where C : Controller {
+    public let archive = CurrentValueSubject<C.A, Never>(.new)
+    public let save = PassthroughSubject<C.A, Never>()
     public let pull = PassthroughSubject<Void, Never>()
+    public let queue = DispatchQueue(label: "", qos: .utility)
     private var subs = Set<AnyCancellable>()
-    private let local = PassthroughSubject<R.A?, Never>()
-    private let queue = DispatchQueue(label: "", qos: .utility)
+    private let local = PassthroughSubject<C.A?, Never>()
     
     public init() {
-        let container = CKContainer(identifier: R.container)
+        let container = CKContainer(identifier: C.container)
         let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<(R.A, Bool), Never>()
-        let remote = PassthroughSubject<R.A?, Never>()
+        let store = PassthroughSubject<(C.A, Bool), Never>()
+        let remote = PassthroughSubject<C.A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let type = "Archive"
         let asset = "asset"
@@ -38,7 +38,7 @@ public struct Memory<R> where R : Controller {
                             }
                             .merge(with: save
                                             .map { _ in
-                                                (nil, .init()) as (R.A?, Date)
+                                                (nil, .init()) as (C.A?, Date)
                                             })
                             .removeDuplicates {
                                 $0.1 >= $1.1
@@ -65,7 +65,7 @@ public struct Memory<R> where R : Controller {
                     if status == .available {
                         container.fetchUserRecordID { user, _ in
                             user.map {
-                                record.send(.init(recordName: R.prefix + $0.recordName))
+                                record.send(.init(recordName: C.prefix + $0.recordName))
                             }
                         }
                     }
@@ -133,7 +133,7 @@ public struct Memory<R> where R : Controller {
             }
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: R.file)
+                record[asset] = CKAsset(fileURL: C.file)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInitiated
                 operation.configuration.timeoutIntervalForRequest = 20
@@ -146,7 +146,7 @@ public struct Memory<R> where R : Controller {
         local
             .merge(with: save
                             .map {
-                                $0 as R.A?
+                                $0 as C.A?
                             })
             .combineLatest(remote
                             .compactMap {
@@ -189,7 +189,7 @@ public struct Memory<R> where R : Controller {
             }
             .sink {
                 do {
-                    try $0.0.data.write(to: R.file, options: .atomic)
+                    try $0.0.data.write(to: C.file, options: .atomic)
                     if $0.1 {
                         push.send()
                     }
@@ -197,7 +197,7 @@ public struct Memory<R> where R : Controller {
             }
             .store(in: &subs)
         
-        local.send(try? Data(contentsOf: R.file)
+        local.send(try? Data(contentsOf: C.file)
                             .prototype())
     }
     
