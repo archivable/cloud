@@ -1,3 +1,3 @@
 # Archivable
 
-A description of this package.
+Archive your stuff

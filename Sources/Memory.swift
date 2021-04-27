@@ -38,7 +38,7 @@ public struct Memory<R> where R : Controller {
                             }
                             .merge(with: save
                                             .map { _ in
-                                                (nil, .init())
+                                                (nil, .init()) as (R.A?, Date)
                                             })
                             .removeDuplicates {
                                 $0.1 >= $1.1
