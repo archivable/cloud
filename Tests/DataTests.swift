@@ -1,7 +1,7 @@
 import XCTest
 import Archivable
 
-final class Tests: XCTestCase {
+final class DataTests: XCTestCase {
     func testPrimitives() {
         Data()
             .adding(UInt8(1))

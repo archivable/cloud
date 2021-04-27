@@ -9,3 +9,10 @@ public protocol Clouder {
     
     init()
 }
+
+public extension Clouder {
+    func save(_ archive: inout C.A) {
+        archive.date = .init()
+        save.send(archive)
+    }
+}

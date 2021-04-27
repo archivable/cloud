@@ -37,8 +37,8 @@ public struct Cloud<C>: Clouder where C : Controller {
                                 ($0, $0.date)
                             }
                             .merge(with: save
-                                            .map { _ in
-                                                (nil, .init()) as (C.A?, Date)
+                                            .map { _ -> (C.A?, Date) in
+                                                (nil, .init())
                                             })
                             .removeDuplicates {
                                 $0.1 >= $1.1
@@ -164,17 +164,17 @@ public struct Cloud<C>: Clouder where C : Controller {
         
         remote
             .map {
-                ($0, Date())
+                ($0, .init())
             }
             .combineLatest(local
                             .compactMap {
                                 $0
                             }
                             .merge(with: save))
-            .filter {
-                $0.0.0 == nil ? true : $0.0.0! < $0.1
+            .filter { (item: ((C.A?, Date),  C.A)) -> Bool in
+                item.0.0 == nil ? true : item.0.0! < item.1
             }
-            .map { remote, _ -> Date in
+            .map { (remote: (C.A?, Date), _: C.A) -> Date in
                 remote.1
             }
             .removeDuplicates()

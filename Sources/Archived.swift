@@ -2,7 +2,7 @@ import Foundation
 
 public protocol Archived: Property, Comparable {
     static var new: Self { get }
-    var date: Date { get }
+    var date: Date { get set }
 }
 
 extension Archived {
