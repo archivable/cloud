@@ -14,11 +14,15 @@ extension Data {
         self = try! (self as NSData).decompressed(using: .lzfse) as Self
     }
     
-    public mutating func string() -> String {
+    public mutating func unwrap() -> Data {
         let size = Int(uInt16())
-        let result = String(decoding: subdata(in: 0 ..< size), as: UTF8.self)
+        let result = subdata(in: 0 ..< size)
         self = removing(size)
         return result
+    }
+    
+    public mutating func string() -> String {
+        String(decoding: unwrap(), as: UTF8.self)
     }
     
     public mutating func date() -> Date {
@@ -65,10 +69,12 @@ extension Data {
         self + collection
     }
     
+    public func wrapping(_ data: Data) -> Self {
+        adding(UInt16(data.count)) + data
+    }
+    
     public func adding(_ string: String) -> Self {
-        {
-            adding(UInt16($0.count)) + $0
-        } (Data(string.utf8))
+        wrapping(.init(string.utf8))
     }
     
     public func adding(_ date: Date) -> Self {

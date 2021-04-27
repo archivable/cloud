@@ -14,6 +14,7 @@ final class Tests: XCTestCase {
             .adding([Date(timeIntervalSince1970: 10), .init(timeIntervalSince1970: 20)]
                         .flatMap(\.data))
             .adding(UUID())
+            .wrapping(Data([1,2,3,4,5,6]))
             .compressed
             .mutating {
                 $0.decompress()
@@ -27,6 +28,7 @@ final class Tests: XCTestCase {
                 XCTAssertEqual(Date(timeIntervalSince1970: 10).timestamp, $0.date().timestamp)
                 XCTAssertEqual(Date(timeIntervalSince1970: 20).timestamp, $0.date().timestamp)
                 XCTAssertNotNil($0.uuid())
+                XCTAssertEqual(Data([1,2,3,4,5,6]), $0.unwrap())
             }
     }
 }
