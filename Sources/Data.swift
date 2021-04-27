@@ -5,6 +5,11 @@ extension Data {
         try! (self as NSData).compressed(using: .lzfse) as Self
     }
     
+    public func prototype<P>() -> P where P : Property {
+        var mutating = self
+        return P.init(data: &mutating)
+    }
+    
     public func mutating<M>(transform: (inout Self) -> M) -> M {
         var mutating = self
         return transform(&mutating)

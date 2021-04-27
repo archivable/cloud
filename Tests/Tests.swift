@@ -2,7 +2,7 @@ import XCTest
 import Archivable
 
 final class Tests: XCTestCase {
-    func testNumbers() {
+    func testPrimitives() {
         Data()
             .adding(UInt8(1))
             .adding(UInt16(2))
@@ -30,5 +30,28 @@ final class Tests: XCTestCase {
                 XCTAssertNotNil($0.uuid())
                 XCTAssertEqual(Data([1,2,3,4,5,6]), $0.unwrap())
             }
+    }
+    
+    func testPrototype() {
+        struct A: Equatable, Property {
+            let number: Int
+            
+            var data: Data {
+                Data()
+                    .adding(UInt16(number))
+            }
+            
+            init(data: inout Data) {
+                number = .init(data.uInt16())
+            }
+            
+            init(number: Int) {
+                self.number = number
+            }
+        }
+        
+        XCTAssertEqual(A(number: 5), Data()
+                                        .adding(A(number: 5).data)
+                                        .prototype())
     }
 }
