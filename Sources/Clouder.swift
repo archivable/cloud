@@ -16,7 +16,7 @@ extension Clouder {
         save.send(archive)
     }
     
-    public func mutate(transform: @escaping (inout C.A) -> Void) {
+    public func mutating(transform: @escaping (inout C.A) -> Void) {
         queue.async {
             var archive = archive.value
             transform(&archive)
