@@ -11,15 +11,14 @@ public protocol Clouder {
 }
 
 extension Clouder {
-    public func save(_ archive: inout C.A) {
-        archive.date = .init()
-        save.send(archive)
-    }
-    
     public func mutating(transform: @escaping (inout C.A) -> Void) {
         queue.async {
-            var archive = archive.value
+            var archive = self.archive.value
             transform(&archive)
+            if archive != self.archive.value {
+                archive.date = .init()
+                save.send(archive)
+            }
         }
     }
 }
