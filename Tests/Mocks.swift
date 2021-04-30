@@ -5,7 +5,7 @@ import Archivable
 struct Repository: Controller {
     typealias A = Archive
     
-    static let memory = Cloud<Self>()
+    static let cloud = Cloud<Self>()
     static let file = URL.manifest("")
     static let container = ""
     static let prefix = ""
