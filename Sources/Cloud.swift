@@ -227,10 +227,10 @@ public struct Cloud<A> where A : Archived {
             .timeout(.seconds(6), scheduler: queue)
             .sink { _ in
                 sub?.cancel()
-                completion(true)
+                completion(false)
             } receiveValue: {
                 sub?.cancel()
-                completion(false)
+                completion(true)
             }
         pull.send()
     }

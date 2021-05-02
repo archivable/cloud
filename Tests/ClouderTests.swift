@@ -50,4 +50,16 @@ final class ClouderTests: XCTestCase {
         .store(in: &subs)
         cloud.mutating { _ in }
     }
+    
+    func testReceipt() {
+        let expect = expectation(description: "")
+        cloud.receipt {
+            XCTAssertTrue($0)
+            expect.fulfill()
+        }
+        cloud.mutating {
+            $0.date = .init(timeIntervalSince1970: 10)
+        }
+        waitForExpectations(timeout: 1)
+    }
 }
