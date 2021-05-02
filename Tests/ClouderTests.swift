@@ -11,18 +11,34 @@ final class ClouderTests: XCTestCase {
         cloud.archive.value = .new
     }
     
+    func testMutateAndArchive() {
+        let expect = expectation(description: "")
+        let date = Date()
+        cloud
+            .archive
+            .dropFirst()
+            .sink {
+                XCTAssertTrue(Thread.current.isMainThread)
+                XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        cloud.mutating {
+            $0.date = .init(timeIntervalSince1970: 10)
+        }
+        waitForExpectations(timeout: 1)
+    }
+    
     func testMutateAndSave() {
         let expect = expectation(description: "")
         let date = Date()
         cloud.save.sink {
-            XCTAssertEqual(Thread.main, Thread.current)
             XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
-            XCTAssertGreaterThanOrEqual(self.cloud.archive.value.date.timestamp, date.timestamp)
             expect.fulfill()
         }
         .store(in: &subs)
         cloud.mutating {
-            $0.date = .init()
+            $0.date = .init(timeIntervalSince1970: 10)
         }
         waitForExpectations(timeout: 1)
     }

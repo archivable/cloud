@@ -10,6 +10,11 @@ public struct Cloud<A> where A : Archived {
     private let local = PassthroughSubject<A?, Never>()
     
     public init(manifest: Manifest?) {
+        save
+            .receive(on: DispatchQueue.main)
+            .subscribe(archive)
+            .store(in: &subs)
+        
         guard let manifest = manifest else { return }
         
         let push = PassthroughSubject<Void, Never>()
@@ -18,11 +23,6 @@ public struct Cloud<A> where A : Archived {
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let type = "Archive"
         let asset = "asset"
-        
-        save
-            .receive(on: DispatchQueue.main)
-            .subscribe(archive)
-            .store(in: &subs)
         
         save
             .map {
@@ -208,6 +208,7 @@ public struct Cloud<A> where A : Archived {
     }
     
     public func mutating(transform: @escaping (inout A) -> Void) {
+        
         queue.async {
             var archive = self.archive.value
             transform(&archive)
