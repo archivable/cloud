@@ -31,7 +31,7 @@ extension Data {
     }
     
     public mutating func string() -> String {
-        String(decoding: unwrap(), as: UTF8.self)
+        .init(decoding: unwrap(), as: UTF8.self)
     }
     
     public mutating func date() -> Date {

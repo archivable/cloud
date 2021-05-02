@@ -1,18 +1,7 @@
 import Foundation
-import Combine
 import Archivable
 
-struct Repository: Controller {
-    typealias A = Archive
-    
-    static let cloud = Cloud<Self>()
-    static let file = URL.manifest("")
-    static let container = ""
-    static let prefix = ""
-    static let title = ""
-}
-
-struct Archive: Archived {
+struct ArchiveMock: Archived {
     static let new = Self()
     var date: Date
     

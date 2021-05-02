@@ -1,19 +1,20 @@
 import CloudKit
 import Combine
 
-public struct Cloud<C>: Clouder where C : Controller {
-    public let archive = CurrentValueSubject<C.A, Never>(.new)
-    public let save = PassthroughSubject<C.A, Never>()
+public struct Cloud<A> where A : Archived {
+    public let archive = CurrentValueSubject<A, Never>(.new)
+    public let save = PassthroughSubject<A, Never>()
     public let pull = PassthroughSubject<Void, Never>()
     public let queue = DispatchQueue(label: "", qos: .utility)
     private var subs = Set<AnyCancellable>()
-    private let local = PassthroughSubject<C.A?, Never>()
+    private let local = PassthroughSubject<A?, Never>()
     
-    public init() {
-        let container = CKContainer(identifier: C.container)
+    public init(manifest: Manifest?) {
+        guard let manifest = manifest else { return }
+        
         let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<(C.A, Bool), Never>()
-        let remote = PassthroughSubject<C.A?, Never>()
+        let store = PassthroughSubject<(A, Bool), Never>()
+        let remote = PassthroughSubject<A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let type = "Archive"
         let asset = "asset"
@@ -42,7 +43,7 @@ public struct Cloud<C>: Clouder where C : Controller {
                                 ($0, $0.date)
                             }
                             .merge(with: save
-                                            .map { _ -> (C.A?, Date) in
+                                            .map { _ -> (A?, Date) in
                                                 (nil, .init())
                                             })
                             .removeDuplicates {
@@ -66,11 +67,11 @@ public struct Cloud<C>: Clouder where C : Controller {
             }
             .map { _, _ in }
             .sink {
-                container.accountStatus { status, _ in
+                manifest.container.accountStatus { status, _ in
                     if status == .available {
-                        container.fetchUserRecordID { user, _ in
+                        manifest.container.fetchUserRecordID { user, _ in
                             user.map {
-                                record.send(.init(recordName: C.prefix + $0.recordName))
+                                record.send(.init(recordName: manifest.prefix + $0.recordName))
                             }
                         }
                     }
@@ -108,7 +109,7 @@ public struct Cloud<C>: Clouder where C : Controller {
                         }
                     })
                 }
-                container.publicCloudDatabase.add(operation)
+                manifest.container.publicCloudDatabase.add(operation)
             }
             .store(in: &subs)
         
@@ -121,10 +122,10 @@ public struct Cloud<C>: Clouder where C : Controller {
                     recordType: type,
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
-                let notification = CKSubscription.NotificationInfo(alertLocalizationKey: C.title)
+                let notification = CKSubscription.NotificationInfo(alertLocalizationKey: manifest.title)
                 notification.shouldSendContentAvailable = true
                 subscription.notificationInfo = notification
-                container.publicCloudDatabase.save(subscription) { _, _ in }
+                manifest.container.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)
         
@@ -138,20 +139,20 @@ public struct Cloud<C>: Clouder where C : Controller {
             }
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: C.file)
+                record[asset] = CKAsset(fileURL: manifest.url)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInitiated
                 operation.configuration.timeoutIntervalForRequest = 20
                 operation.configuration.timeoutIntervalForResource = 20
                 operation.savePolicy = .allKeys
-                container.publicCloudDatabase.add(operation)
+                manifest.container.publicCloudDatabase.add(operation)
             }
             .store(in: &subs)
         
         local
             .merge(with: save
                             .map {
-                                $0 as C.A?
+                                $0 as A?
                             })
             .combineLatest(remote
                             .compactMap {
@@ -176,10 +177,10 @@ public struct Cloud<C>: Clouder where C : Controller {
                                 $0
                             }
                             .merge(with: save))
-            .filter { (item: ((C.A?, Date),  C.A)) -> Bool in
+            .filter { (item: ((A?, Date),  A)) -> Bool in
                 item.0.0 == nil ? true : item.0.0! < item.1
             }
-            .map { (remote: (C.A?, Date), _: C.A) -> Date in
+            .map { (remote: (A?, Date), _: A) -> Date in
                 remote.1
             }
             .removeDuplicates()
@@ -194,7 +195,7 @@ public struct Cloud<C>: Clouder where C : Controller {
             }
             .sink {
                 do {
-                    try $0.0.data.write(to: C.file, options: .atomic)
+                    try $0.0.data.write(to: manifest.url, options: .atomic)
                     if $0.1 {
                         push.send()
                     }
@@ -202,8 +203,19 @@ public struct Cloud<C>: Clouder where C : Controller {
             }
             .store(in: &subs)
         
-        local.send(try? Data(contentsOf: C.file)
-                            .prototype())
+        local.send(try? Data(contentsOf: manifest.url)
+                    .prototype())
+    }
+    
+    public func mutating(transform: @escaping (inout A) -> Void) {
+        queue.async {
+            var archive = self.archive.value
+            transform(&archive)
+            if archive != self.archive.value {
+                archive.date = .init()
+                save.send(archive)
+            }
+        }
     }
     
     public func receipt(completion: @escaping (Bool) -> Void) {

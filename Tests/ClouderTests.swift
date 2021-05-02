@@ -3,11 +3,11 @@ import Combine
 import Archivable
 
 final class ClouderTests: XCTestCase {
-    private var cloud: Cloud<Repository>.Stub!
+    private var cloud: Cloud<ArchiveMock>!
     private var subs = Set<AnyCancellable>()
 
     override func setUp() {
-        cloud = .init()
+        cloud = .init(manifest: nil)
         cloud.archive.value = .new
     }
     
