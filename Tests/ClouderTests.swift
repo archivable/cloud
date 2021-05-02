@@ -8,7 +8,6 @@ final class ClouderTests: XCTestCase {
 
     override func setUp() {
         cloud = .init(manifest: nil)
-        cloud.archive.value = .new
     }
     
     func testMutateAndArchive() {
@@ -23,9 +22,11 @@ final class ClouderTests: XCTestCase {
                 expect.fulfill()
             }
             .store(in: &subs)
+        
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
         }
+        
         waitForExpectations(timeout: 1)
     }
     
@@ -37,9 +38,11 @@ final class ClouderTests: XCTestCase {
             expect.fulfill()
         }
         .store(in: &subs)
+        
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
         }
+        
         waitForExpectations(timeout: 1)
     }
     
@@ -48,6 +51,7 @@ final class ClouderTests: XCTestCase {
             XCTFail()
         }
         .store(in: &subs)
+        
         cloud.mutating { _ in }
     }
     
@@ -57,9 +61,11 @@ final class ClouderTests: XCTestCase {
             XCTAssertTrue($0)
             expect.fulfill()
         }
+        
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
         }
+        
         waitForExpectations(timeout: 1)
     }
 }

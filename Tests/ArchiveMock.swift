@@ -11,7 +11,7 @@ struct ArchiveMock: Archived {
     }
     
     public init(data: inout Data) {
-        date = .init(timestamp: data.uInt32())
+        date = .init()
     }
     
     private init() {
