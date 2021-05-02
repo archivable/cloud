@@ -201,24 +201,19 @@ public struct Cloud<C>: Clouder where C : Controller {
                             .prototype())
     }
     
-    public var receipt: Future<Bool, Never> {
-        let archive = self.archive
-        let pull = self.pull
-        let queue = self.queue
-        return .init { promise in
-            var sub: AnyCancellable?
-            sub = archive
-                    .dropFirst()
-                    .map { _ in }
-                    .timeout(.seconds(9), scheduler: queue)
-                    .sink { _ in
-                        sub?.cancel()
-                        promise(.success(false))
-                    } receiveValue: {
-                        sub?.cancel()
-                        promise(.success(true))
-                    }
-            pull.send()
-        }
+    public func receipt(completion: @escaping (Bool) -> Void) {
+        var sub: AnyCancellable?
+        sub = archive
+            .dropFirst()
+            .map { _ in }
+            .timeout(.seconds(6), scheduler: queue)
+            .sink { _ in
+                sub?.cancel()
+                completion(true)
+            } receiveValue: {
+                sub?.cancel()
+                completion(false)
+            }
+        pull.send()
     }
 }

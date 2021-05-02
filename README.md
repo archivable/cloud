@@ -1,3 +1,3 @@
 # Archivable
 
-Archive your stuff
+Archive your models
