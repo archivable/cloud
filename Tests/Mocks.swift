@@ -9,6 +9,7 @@ struct Repository: Controller {
     static let file = URL.manifest("")
     static let container = ""
     static let prefix = ""
+    static let title = ""
 }
 
 struct Archive: Archived {

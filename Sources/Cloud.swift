@@ -116,7 +116,7 @@ public struct Cloud<C>: Clouder where C : Controller {
                     recordType: type,
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
-                let notification = CKSubscription.NotificationInfo(alertLocalizationKey: "Avocado")
+                let notification = CKSubscription.NotificationInfo(alertLocalizationKey: C.title)
                 notification.shouldSendContentAvailable = true
                 subscription.notificationInfo = notification
                 container.publicCloudDatabase.save(subscription) { _, _ in }
