@@ -15,6 +15,7 @@ final class ClouderTests: XCTestCase {
         let expect = expectation(description: "")
         let date = Date()
         cloud.save.sink {
+            XCTAssertEqual(Thread.main, Thread.current)
             XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
             XCTAssertGreaterThanOrEqual(self.cloud.archive.value.date.timestamp, date.timestamp)
             expect.fulfill()

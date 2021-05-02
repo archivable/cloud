@@ -17,7 +17,6 @@ extension Clouder {
             transform(&archive)
             if archive != self.archive.value {
                 archive.date = .init()
-                self.archive.value = archive
                 save.send(archive)
             }
         }

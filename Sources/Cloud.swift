@@ -19,6 +19,11 @@ public struct Cloud<C>: Clouder where C : Controller {
         let asset = "asset"
         
         save
+            .receive(on: DispatchQueue.main)
+            .subscribe(archive)
+            .store(in: &subs)
+        
+        save
             .map {
                 ($0, true)
             }
