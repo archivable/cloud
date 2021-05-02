@@ -4,6 +4,7 @@ import Archivable
 struct ArchiveMock: Archived {
     static let new = Self()
     var date: Date
+    var counter = 0
     
     var data: Data {
         Data()

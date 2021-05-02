@@ -11,7 +11,6 @@ public struct Cloud<A> where A : Archived {
     
     public init(manifest: Manifest?) {
         save
-            .receive(on: DispatchQueue.main)
             .subscribe(archive)
             .store(in: &subs)
         
@@ -208,11 +207,11 @@ public struct Cloud<A> where A : Archived {
     }
     
     public func mutating(transform: @escaping (inout A) -> Void) {
-        
-        queue.async {
-            var archive = self.archive.value
+        DispatchQueue.main.async {
+            let current = self.archive.value
+            var archive = current
             transform(&archive)
-            if archive != self.archive.value {
+            if archive != current {
                 archive.date = .init()
                 save.send(archive)
             }

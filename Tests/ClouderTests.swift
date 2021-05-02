@@ -68,4 +68,29 @@ final class ClouderTests: XCTestCase {
         
         waitForExpectations(timeout: 1)
     }
+    
+    func testConsecutiveMutations() {
+        let expect = expectation(description: "")
+        expect.expectedFulfillmentCount = 2
+
+        cloud
+            .archive
+            .dropFirst()
+            .sink { _ in
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.mutating {
+            $0.counter += 1
+        }
+        
+        cloud.mutating {
+            $0.counter += 1
+        }
+        
+        waitForExpectations(timeout: 1) { _ in
+            XCTAssertEqual(2, self.cloud.archive.value.counter)
+        }
+    }
 }
