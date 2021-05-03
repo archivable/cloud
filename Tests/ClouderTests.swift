@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-import Archivable
+@testable import Archivable
 
 final class ClouderTests: XCTestCase {
     private var cloud: Cloud<ArchiveMock>!

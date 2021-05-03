@@ -3,11 +3,11 @@ import Combine
 
 public struct Cloud<A> where A : Archived {
     public let archive = CurrentValueSubject<A, Never>(.new)
-    public let save = PassthroughSubject<A, Never>()
     public let pull = PassthroughSubject<Void, Never>()
-    public let queue = DispatchQueue(label: "", qos: .utility)
+    let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
     private let local = PassthroughSubject<A?, Never>()
+    private let queue = DispatchQueue(label: "", qos: .utility)
     
     public init(manifest: Manifest?) {
         save
