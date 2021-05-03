@@ -2,7 +2,7 @@ import XCTest
 import Combine
 @testable import Archivable
 
-final class ClouderTests: XCTestCase {
+final class CloudTests: XCTestCase {
     private var cloud: Cloud<ArchiveMock>!
     private var subs = Set<AnyCancellable>()
 
