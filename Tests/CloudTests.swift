@@ -33,11 +33,13 @@ final class CloudTests: XCTestCase {
     func testMutateAndSave() {
         let expect = expectation(description: "")
         let date = Date()
-        cloud.save.sink {
-            XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
-            expect.fulfill()
-        }
-        .store(in: &subs)
+        cloud
+            .save
+            .sink {
+                XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
+                expect.fulfill()
+            }
+            .store(in: &subs)
         
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
@@ -47,10 +49,12 @@ final class CloudTests: XCTestCase {
     }
     
     func testMutateDontSave() {
-        cloud.save.sink { _ in
-            XCTFail()
-        }
-        .store(in: &subs)
+        cloud
+            .save
+            .sink { _ in
+                XCTFail()
+            }
+            .store(in: &subs)
         
         cloud.mutating { _ in }
     }
@@ -102,6 +106,32 @@ final class CloudTests: XCTestCase {
         } completion: {
             XCTAssertEqual(1, self.cloud.archive.value.counter)
             expect.fulfill()
+        }
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testEphemeral() {
+        let expect = expectation(description: "")
+        cloud
+            .archive
+            .dropFirst()
+            .sink {
+                XCTAssertTrue(Thread.current.isMainThread)
+                XCTAssertEqual(1, $0.counter)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .save
+            .sink { _ in
+                XCTFail()
+            }
+            .store(in: &subs)
+        
+        cloud.ephemeral {
+            $0.counter = 1
         }
         
         waitForExpectations(timeout: 1)

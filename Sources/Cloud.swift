@@ -224,6 +224,14 @@ public struct Cloud<A> where A : Archived {
         }
     }
     
+    public func ephemeral(transform: @escaping (inout A) -> Void) {
+        DispatchQueue.main.async {
+            var archive = self.archive.value
+            transform(&archive)
+            self.archive.send(archive)
+        }
+    }
+    
     public func receipt(completion: @escaping (Bool) -> Void) {
         var sub: AnyCancellable?
         sub = archive
