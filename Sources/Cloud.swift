@@ -206,16 +206,20 @@ public struct Cloud<A> where A : Archived {
                     .prototype())
     }
     
-    public func mutating(transform: @escaping (inout A) -> (() -> Void)?) {
+    public func mutating(transform: @escaping (inout A) -> Void) {
+        mutating(transform: transform) { }
+    }
+    
+    public func mutating<T>(transform: @escaping (inout A) -> T, completion: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             let current = self.archive.value
             var archive = current
-            let deferred = transform(&archive)
+            let result = transform(&archive)
             if archive != current {
                 archive.date = .init()
                 save.send(archive)
             }
-            deferred?()
+            completion(result)
         }
     }
     

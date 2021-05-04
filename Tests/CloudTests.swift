@@ -5,7 +5,7 @@ import Combine
 final class CloudTests: XCTestCase {
     private var cloud: Cloud<ArchiveMock>!
     private var subs = Set<AnyCancellable>()
-
+    
     override func setUp() {
         cloud = .init(manifest: nil)
     }
@@ -25,7 +25,6 @@ final class CloudTests: XCTestCase {
         
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
-            return nil
         }
         
         waitForExpectations(timeout: 1)
@@ -42,7 +41,6 @@ final class CloudTests: XCTestCase {
         
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
-            return nil
         }
         
         waitForExpectations(timeout: 1)
@@ -54,7 +52,7 @@ final class CloudTests: XCTestCase {
         }
         .store(in: &subs)
         
-        cloud.mutating { _ in nil }
+        cloud.mutating { _ in }
     }
     
     func testReceipt() {
@@ -66,7 +64,6 @@ final class CloudTests: XCTestCase {
         
         cloud.mutating {
             $0.date = .init(timeIntervalSince1970: 10)
-            return nil
         }
         
         waitForExpectations(timeout: 1)
@@ -75,7 +72,7 @@ final class CloudTests: XCTestCase {
     func testConsecutiveMutations() {
         let expect = expectation(description: "")
         expect.expectedFulfillmentCount = 2
-
+        
         cloud
             .archive
             .dropFirst()
@@ -86,12 +83,10 @@ final class CloudTests: XCTestCase {
         
         cloud.mutating {
             $0.counter += 1
-            return nil
         }
         
         cloud.mutating {
             $0.counter += 1
-            return nil
         }
         
         waitForExpectations(timeout: 1) { _ in
@@ -99,15 +94,14 @@ final class CloudTests: XCTestCase {
         }
     }
     
-    func testDeferred() {
+    func testCompletion() {
         let expect = expectation(description: "")
-
+        
         cloud.mutating {
             $0.counter += 1
-            return {
-                XCTAssertEqual(1, self.cloud.archive.value.counter)
-                expect.fulfill()
-            }
+        } completion: {
+            XCTAssertEqual(1, self.cloud.archive.value.counter)
+            expect.fulfill()
         }
         
         waitForExpectations(timeout: 1)
