@@ -25,13 +25,15 @@ extension Array {
         return array
     }
     
-    public static func +(array: Self, element: Element) -> Self {
+    public static func +(array: Self, element: Element?) -> Self {
+        guard let element = element else { return array }
         var array = array
         array.append(element)
         return array
     }
     
-    public static func +(element: Element, array: Self) -> Self {
+    public static func +(element: Element?, array: Self) -> Self {
+        guard let element = element else { return array }
         var array = array
         array.insert(element, at: 0)
         return array
