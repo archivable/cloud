@@ -38,4 +38,9 @@ extension Array {
         array.insert(element, at: 0)
         return array
     }
+    
+    public static func +=(array: inout Self, element: Element?) {
+        guard let element = element else { return }
+        array.append(element)
+    }
 }
