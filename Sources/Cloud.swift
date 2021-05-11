@@ -208,31 +208,19 @@ public struct Cloud<A> where A : Archived {
     
     
     public func mutating(transform: @escaping (inout A) -> Void) {
-        mutating(transform: transform) { }
+        mutating(save: true, transform: transform) { }
     }
     
     public func mutating<T>(transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
-        DispatchQueue.main.async {
-            let current = self.archive.value
-            var archive = current
-            let result = transform(&archive)
-            if archive != current {
-                archive.date = .init()
-                save.send(archive)
-            }
-            result.map(completion)
-        }
+        mutating(save: true, transform: transform, completion: completion)
     }
     
     public func ephemeral(transform: @escaping (inout A) -> Void) {
-        DispatchQueue.main.async {
-            let current = self.archive.value
-            var archive = current
-            transform(&archive)
-            if archive != current {
-                self.archive.send(archive)
-            }
-        }
+        mutating(save: false, transform: transform) { }
+    }
+    
+    public func ephemeral<T>(transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
+        mutating(save: false, transform: transform, completion: completion)
     }
     
     public func receipt(completion: @escaping (Bool) -> Void) {
@@ -249,5 +237,22 @@ public struct Cloud<A> where A : Archived {
                 completion(true)
             }
         pull.send()
+    }
+    
+    private func mutating<T>(save: Bool, transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
+        DispatchQueue.main.async {
+            let current = self.archive.value
+            var archive = current
+            let result = transform(&archive)
+            if archive != current {
+                if save {
+                    archive.date = .init()
+                    self.save.send(archive)
+                } else {
+                    self.archive.send(archive)
+                }
+            }
+            result.map(completion)
+        }
     }
 }
