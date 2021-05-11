@@ -226,9 +226,12 @@ public struct Cloud<A> where A : Archived {
     
     public func ephemeral(transform: @escaping (inout A) -> Void) {
         DispatchQueue.main.async {
-            var archive = self.archive.value
+            let current = self.archive.value
+            var archive = current
             transform(&archive)
-            self.archive.send(archive)
+            if archive != current {
+                self.archive.send(archive)
+            }
         }
     }
     
