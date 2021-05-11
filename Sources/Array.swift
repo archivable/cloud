@@ -1,6 +1,26 @@
 import Foundation
 
 extension Array {
+    public mutating func mutate(criteria: (Self) -> Int?, transform: (Element) -> Element) {
+        criteria(self)
+            .map {
+                self[$0] = transform(self[$0])
+            }
+    }
+    
+    public mutating func mutate(index: Int, transform: (Element) -> Element) {
+        self[index] = transform(self[index])
+    }
+    
+    public func mutating(criteria: (Self) -> Int?, transform: (Element) -> Element) -> Self {
+        var array = self
+        criteria(self)
+            .map {
+                array[$0] = transform(array[$0])
+            }
+        return array
+    }
+    
     public func mutating(index: Int, transform: (Element) -> Element) -> Self {
         var array = self
         array[index] = transform(array[index])
