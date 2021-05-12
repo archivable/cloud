@@ -1,8 +1,8 @@
 import Foundation
 
 extension Array {
-    public mutating func mutate(criteria: (Self) -> Int?, transform: (Element) -> Element?) {
-        criteria(self)
+    public mutating func mutate(where element: (Self) -> Int?, transform: (Element) -> Element?) {
+        element(self)
             .map { index in
                 transform(self[index])
                     .map {
@@ -15,6 +15,13 @@ extension Array {
         transform(self[index])
             .map {
                 self[index] = $0
+            }
+    }
+    
+    @discardableResult public mutating func remove(where element: (Element) -> Bool) -> Element? {
+        firstIndex(where: element)
+            .map {
+                remove(at: $0)
             }
     }
     
