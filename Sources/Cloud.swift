@@ -188,10 +188,10 @@ public struct Cloud<A> where A : Archived {
             .store(in: &subs)
         
         store
-            .debounce(for: .seconds(1), scheduler: queue)
             .removeDuplicates {
                 $0.0 >= $1.0
             }
+            .debounce(for: .seconds(1), scheduler: queue)
             .sink {
                 do {
                     try $0.0.data.write(to: manifest.url, options: .atomic)
