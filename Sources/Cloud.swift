@@ -94,9 +94,9 @@ public struct Cloud<A> where A : Archived {
             }
             .sink {
                 let operation = CKFetchRecordsOperation(recordIDs: [$0])
-                operation.qualityOfService = .userInitiated
-                operation.configuration.timeoutIntervalForRequest = 20
-                operation.configuration.timeoutIntervalForResource = 20
+                operation.qualityOfService = .utility
+                operation.configuration.timeoutIntervalForRequest = 10
+                operation.configuration.timeoutIntervalForResource = 10
                 operation.fetchRecordsCompletionBlock = { records, _ in
                     remote.send(records?.values.first.flatMap {
                         ($0[asset] as? CKAsset).flatMap {
@@ -141,8 +141,8 @@ public struct Cloud<A> where A : Archived {
                 record[asset] = CKAsset(fileURL: manifest.url)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInitiated
-                operation.configuration.timeoutIntervalForRequest = 20
-                operation.configuration.timeoutIntervalForResource = 20
+                operation.configuration.timeoutIntervalForRequest = 15
+                operation.configuration.timeoutIntervalForResource = 15
                 operation.savePolicy = .allKeys
                 manifest.container.publicCloudDatabase.add(operation)
             }
