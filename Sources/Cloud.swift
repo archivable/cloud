@@ -2,6 +2,7 @@ import CloudKit
 import Combine
 
 public struct Cloud<A> where A : Archived {
+    public let notifier = DispatchGroup()
     public let archive = CurrentValueSubject<A, Never>(.new)
     public let pull = PassthroughSubject<Void, Never>()
     let save = PassthroughSubject<A, Never>()
@@ -13,6 +14,7 @@ public struct Cloud<A> where A : Archived {
         save
             .subscribe(archive)
             .store(in: &subs)
+        notifier.enter()
         
         guard let manifest = manifest else { return }
         
@@ -204,6 +206,7 @@ public struct Cloud<A> where A : Archived {
         
         local.send(try? Data(contentsOf: manifest.url)
                     .prototype())
+        notifier.leave()
     }
     
     
