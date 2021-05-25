@@ -8,7 +8,7 @@ public struct Cloud<A> where A : Archived {
     let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
     private let local = PassthroughSubject<A?, Never>()
-    private let queue = DispatchQueue(label: "", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
     public init(manifest: Manifest?) {
         save
@@ -68,13 +68,11 @@ public struct Cloud<A> where A : Archived {
             }
             .map { _, _ in }
             .sink {
-                print("record")
                 manifest.container.accountStatus { status, _ in
                     if status == .available {
                         manifest.container.fetchUserRecordID { user, _ in
                             user.map {
-                                print("send record")
-                                return record.send(.init(recordName: manifest.prefix + $0.recordName))
+                                record.send(.init(recordName: manifest.prefix + $0.recordName))
                             }
                         }
                     }
