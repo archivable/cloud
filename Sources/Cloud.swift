@@ -96,7 +96,7 @@ public struct Cloud<A> where A : Archived {
             }
             .sink {
                 let operation = CKFetchRecordsOperation(recordIDs: [$0])
-                operation.qualityOfService = .utility
+                operation.qualityOfService = .userInitiated
                 operation.configuration.timeoutIntervalForRequest = 10
                 operation.configuration.timeoutIntervalForResource = 10
                 operation.fetchRecordsCompletionBlock = { records, _ in
