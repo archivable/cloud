@@ -8,7 +8,7 @@ public struct Cloud<A> where A : Archived {
     let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
     private let local = PassthroughSubject<A?, Never>()
-    private let queue = DispatchQueue(label: "", qos: .utility)
+    private let queue = DispatchQueue(label: "", qos: .userInteractive)
     
     public init(manifest: Manifest?) {
         save
@@ -68,11 +68,13 @@ public struct Cloud<A> where A : Archived {
             }
             .map { _, _ in }
             .sink {
+                print("record")
                 manifest.container.accountStatus { status, _ in
                     if status == .available {
                         manifest.container.fetchUserRecordID { user, _ in
                             user.map {
-                                record.send(.init(recordName: manifest.prefix + $0.recordName))
+                                print("send record")
+                                return record.send(.init(recordName: manifest.prefix + $0.recordName))
                             }
                         }
                     }
@@ -96,7 +98,7 @@ public struct Cloud<A> where A : Archived {
             }
             .sink {
                 let operation = CKFetchRecordsOperation(recordIDs: [$0])
-                operation.qualityOfService = .userInitiated
+                operation.qualityOfService = .userInteractive
                 operation.configuration.timeoutIntervalForRequest = 10
                 operation.configuration.timeoutIntervalForResource = 10
                 operation.fetchRecordsCompletionBlock = { records, _ in
@@ -142,7 +144,7 @@ public struct Cloud<A> where A : Archived {
                 let record = CKRecord(recordType: type, recordID: $0)
                 record[asset] = CKAsset(fileURL: manifest.url)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
-                operation.qualityOfService = .userInitiated
+                operation.qualityOfService = .userInteractive
                 operation.configuration.timeoutIntervalForRequest = 15
                 operation.configuration.timeoutIntervalForResource = 15
                 operation.savePolicy = .allKeys
