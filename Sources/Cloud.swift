@@ -8,7 +8,7 @@ public struct Cloud<A> where A : Archived {
     let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
     private let local = PassthroughSubject<A?, Never>()
-    private let queue = DispatchQueue(label: "", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "", qos: .userInteractive)
     
     public init(manifest: Manifest?) {
         save
