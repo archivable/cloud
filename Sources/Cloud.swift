@@ -209,7 +209,6 @@ public struct Cloud<A> where A : Archived {
         notifier.leave()
     }
     
-    
     public func mutating(transform: @escaping (inout A) -> Void) {
         mutating(save: true, transform: transform) { }
     }
