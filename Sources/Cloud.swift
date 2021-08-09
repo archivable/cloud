@@ -217,6 +217,10 @@ public struct Cloud<A> where A : Archived {
         mutating(save: true, transform: transform, completion: completion)
     }
     
+    public func mutating(transform: @escaping (inout A) -> Void, completion: @escaping () -> Void) {
+        mutating(save: true, transform: transform, completion: completion)
+    }
+    
     public func ephemeral(transform: @escaping (inout A) -> Void) {
         mutating(save: false, transform: transform) { }
     }

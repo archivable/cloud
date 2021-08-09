@@ -111,6 +111,20 @@ final class CloudTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
+    func testCompletionVoid() {
+        let expect = expectation(description: "")
+        
+        cloud.mutating {
+            $0.counter += 1
+            $0.counter += 2
+        } completion: {
+            XCTAssertEqual(3, self.cloud.archive.value.counter)
+            expect.fulfill()
+        }
+        
+        waitForExpectations(timeout: 1)
+    }
+    
     func testEphemeral() {
         let expect = expectation(description: "")
         cloud
