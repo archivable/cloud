@@ -23,9 +23,10 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        cloud.mutating {
-            $0.date = .init(timeIntervalSince1970: 10)
-        }
+        cloud
+            .mutating {
+                $0.date = .init(timeIntervalSince1970: 10)
+            }
         
         waitForExpectations(timeout: 1)
     }
@@ -41,9 +42,10 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        cloud.mutating {
-            $0.date = .init(timeIntervalSince1970: 10)
-        }
+        cloud
+            .mutating {
+                $0.date = .init(timeIntervalSince1970: 10)
+            }
         
         waitForExpectations(timeout: 1)
     }
@@ -66,9 +68,10 @@ final class CloudTests: XCTestCase {
             expect.fulfill()
         }
         
-        cloud.mutating {
-            $0.date = .init(timeIntervalSince1970: 10)
-        }
+        cloud
+            .mutating {
+                $0.date = .init(timeIntervalSince1970: 10)
+            }
         
         waitForExpectations(timeout: 1)
     }
@@ -85,13 +88,15 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        cloud.mutating {
-            $0.counter += 1
-        }
+        cloud
+            .mutating {
+                $0.counter += 1
+            }
         
-        cloud.mutating {
-            $0.counter += 1
-        }
+        cloud
+            .mutating {
+                $0.counter += 1
+            }
         
         waitForExpectations(timeout: 1) { _ in
             XCTAssertEqual(2, self.cloud.archive.value.counter)
@@ -144,9 +149,40 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        cloud.ephemeral {
-            $0.counter = 1
-        }
+        cloud
+            .ephemeral {
+                $0.counter = 1
+            }
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testTransform() {
+        let expect = expectation(description: "")
+        cloud
+            .archive
+            .dropFirst()
+            .sink { _ in
+                XCTFail()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .save
+            .sink { _ in
+                XCTFail()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .transform {
+                XCTAssertFalse(Thread.current.isMainThread)
+                return $0.counter + 1
+            } completion: { (result: Int) in
+                XCTAssertTrue(Thread.current.isMainThread)
+                XCTAssertEqual(1, result)
+                expect.fulfill()
+            }
         
         waitForExpectations(timeout: 1)
     }

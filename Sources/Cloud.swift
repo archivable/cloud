@@ -245,6 +245,23 @@ public struct Cloud<A> where A : Archived {
         pull.send()
     }
     
+    public func transform<T>(transforming: @escaping (A) -> T?, completion: @escaping (T) -> Void) {
+        DispatchQueue
+            .main
+            .async {
+                let archive = self.archive.value
+                queue
+                    .async {
+                        let result = transforming(archive)
+                        DispatchQueue
+                            .main
+                            .async {
+                                result.map(completion)
+                            }
+                    }
+            }
+    }
+    
     private func mutating<T>(save: Bool, transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
         DispatchQueue.main.async {
             let current = self.archive.value
