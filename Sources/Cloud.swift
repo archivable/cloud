@@ -176,13 +176,12 @@ public struct Cloud<A> where A : Archived {
                                 $0
                             }
                             .merge(with: save))
+            .removeDuplicates {
+                $0.0.1 == $1.0.1
+            }
             .filter { (item: ((A?, Date),  A)) -> Bool in
                 item.0.0 == nil ? true : item.0.0! < item.1
             }
-            .map { (remote: (A?, Date), _: A) -> Date in
-                remote.1
-            }
-            .removeDuplicates()
             .map { _ in }
             .subscribe(push)
             .store(in: &subs)
