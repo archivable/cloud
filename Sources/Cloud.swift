@@ -123,9 +123,7 @@ public struct Cloud<A> where A : Archived {
                     recordType: type,
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
-                let notification = CKSubscription.NotificationInfo(alertLocalizationKey: manifest.title)
-                notification.shouldSendContentAvailable = true
-                subscription.notificationInfo = notification
+                subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                 manifest.container.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)

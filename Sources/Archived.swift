@@ -7,6 +7,6 @@ public protocol Archived: Property, Comparable {
 
 extension Archived {
     public static func < (lhs: Self, rhs: Self) -> Bool {
-        lhs.date < rhs.date
+        lhs.date.timestamp < rhs.date.timestamp
     }
 }
