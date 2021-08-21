@@ -41,11 +41,11 @@ public struct Cloud<A> where A : Archived {
                                 $0
                             }
                             .map {
-                                ($0, $0.date)
+                                ($0, $0.timestamp)
                             }
                             .merge(with: save
-                                            .map { _ -> (A?, Date) in
-                                                (nil, .init())
+                                            .map { _ -> (A?, UInt32) in
+                                                (nil, Date().timestamp)
                                             })
                             .removeDuplicates {
                                 $0.1 >= $1.1
@@ -267,7 +267,7 @@ public struct Cloud<A> where A : Archived {
             let result = transform(&archive)
             if archive != current {
                 if save {
-                    archive.date = .init()
+                    archive.timestamp = Date().timestamp
                     self.save.send(archive)
                 } else {
                     self.archive.send(archive)

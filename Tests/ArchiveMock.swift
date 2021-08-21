@@ -3,19 +3,19 @@ import Archivable
 
 struct ArchiveMock: Archived {
     static let new = Self()
-    var date: Date
+    var timestamp: UInt32
     var counter = 0
     
     var data: Data {
         Data()
-            .adding(date)
+            .adding(timestamp)
     }
     
     public init(data: inout Data) {
-        date = .init()
+        timestamp = Date().timestamp
     }
     
     private init() {
-        date = .init(timeIntervalSince1970: 0)
+        timestamp = 0
     }
 }

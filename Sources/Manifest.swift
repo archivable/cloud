@@ -4,7 +4,6 @@ public struct Manifest {
     public let container: CKContainer
     public let url: URL
     public let prefix: String
-    public let title: String
     
     public init(file: String, container: String, prefix: String, title: String) {
         var url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(file)
@@ -15,6 +14,5 @@ public struct Manifest {
         self.url = url
         self.container = CKContainer(identifier: container)
         self.prefix = prefix
-        self.title = title
     }
 }

@@ -18,14 +18,14 @@ final class CloudTests: XCTestCase {
             .dropFirst()
             .sink {
                 XCTAssertTrue(Thread.current.isMainThread)
-                XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
+                XCTAssertGreaterThanOrEqual($0.timestamp, date.timestamp)
                 expect.fulfill()
             }
             .store(in: &subs)
         
         cloud
             .mutating {
-                $0.date = .init(timeIntervalSince1970: 10)
+                $0.timestamp = 10
             }
         
         waitForExpectations(timeout: 1)
@@ -37,14 +37,14 @@ final class CloudTests: XCTestCase {
         cloud
             .save
             .sink {
-                XCTAssertGreaterThanOrEqual($0.date.timestamp, date.timestamp)
+                XCTAssertGreaterThanOrEqual($0.timestamp, date.timestamp)
                 expect.fulfill()
             }
             .store(in: &subs)
         
         cloud
             .mutating {
-                $0.date = .init(timeIntervalSince1970: 10)
+                $0.timestamp = 10
             }
         
         waitForExpectations(timeout: 1)
@@ -70,7 +70,7 @@ final class CloudTests: XCTestCase {
         
         cloud
             .mutating {
-                $0.date = .init(timeIntervalSince1970: 10)
+                $0.timestamp = 10
             }
         
         waitForExpectations(timeout: 1)

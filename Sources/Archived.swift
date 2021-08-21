@@ -2,11 +2,11 @@ import Foundation
 
 public protocol Archived: Property, Comparable {
     static var new: Self { get }
-    var date: Date { get set }
+    var timestamp: UInt32 { get set }
 }
 
 extension Archived {
     public static func < (lhs: Self, rhs: Self) -> Bool {
-        lhs.date.timestamp < rhs.date.timestamp
+        lhs.timestamp < rhs.timestamp
     }
 }
