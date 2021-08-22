@@ -5,7 +5,7 @@ public struct Manifest {
     public let url: URL
     public let prefix: String
     
-    public init(file: String, container: String, prefix: String, title: String) {
+    public init(file: String, container: String, prefix: String) {
         var url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(file)
         var resources = URLResourceValues()
         resources.isExcludedFromBackup = true
