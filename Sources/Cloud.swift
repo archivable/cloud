@@ -124,7 +124,7 @@ public struct Cloud<A> where A : Archived {
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
                 subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                subscription.notificationInfo!.alertBody = ""
+                subscription.notificationInfo!.soundName = ""
                 manifest.container.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)
