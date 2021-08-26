@@ -125,7 +125,6 @@ public struct Cloud<A> where A : Archived {
                     .fetchAllSubscriptions { subs, _ in
                         subs?
                             .forEach {
-                                print("delete sub")
                                 manifest.container.publicCloudDatabase.delete(withSubscriptionID: $0.subscriptionID) { _, _ in }
                             }
                     }
@@ -134,7 +133,7 @@ public struct Cloud<A> where A : Archived {
                     recordType: type,
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
-                subscription.notificationInfo = .init(shouldSendContentAvailable: false)
+                subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                 manifest.container.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)
