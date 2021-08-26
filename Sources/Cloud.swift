@@ -119,6 +119,17 @@ public struct Cloud<A> where A : Archived {
                 $0
             }
             .sink {
+                manifest
+                    .container
+                    .publicCloudDatabase
+                    .fetchAllSubscriptions { subs, _ in
+                        subs?
+                            .forEach {
+                                print("delete sub")
+                                manifest.container.publicCloudDatabase.delete(withSubscriptionID: $0.subscriptionID) { _, _ in }
+                            }
+                    }
+                
                 let subscription = CKQuerySubscription(
                     recordType: type,
                     predicate: .init(format: "recordID = %@", $0),
