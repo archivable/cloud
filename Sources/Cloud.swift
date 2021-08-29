@@ -7,7 +7,6 @@ public struct Cloud<A> where A : Archived {
     public let pull = PassthroughSubject<Void, Never>()
     let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
-    private let local = PassthroughSubject<A?, Never>()
     private let queue = DispatchQueue(label: "", qos: .userInteractive)
     
     public init(manifest: Manifest?) {
@@ -22,6 +21,7 @@ public struct Cloud<A> where A : Archived {
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
         let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
+        let local = PassthroughSubject<A?, Never>()
         let type = "Archive"
         let asset = "asset"
         
@@ -211,7 +211,9 @@ public struct Cloud<A> where A : Archived {
             }
             .store(in: &subs)
         
-        local.send(Data.prototype(url: manifest.url))
+        Task.detached(priority: .utility) {
+            local.send(Data.prototype(url: manifest.url))
+        }
         
         notifier.leave()
     }
