@@ -1,17 +1,35 @@
 import Foundation
+import Combine
 
 actor Actor {
-    var number: Int
+    var acted: Acted {
+        didSet {
+            update()
+        }
+    }
+    
+    nonisolated let stream = PassthroughSubject<Acted, Never>()
     
     init() async {
-        number = await load()
+        acted = await load()
+        update()
+    }
+    
+    private func update() {
+        Task.detached {
+            await self.stream.send(self.acted)
+        }
     }
 }
 
-private func load() async -> Int {
+struct Acted {
+    let value = 100
+}
+
+private func load() async -> Acted {
     await withUnsafeContinuation { continuation in
         DispatchQueue.global(qos: .utility).async {
-            continuation.resume(returning: 99)
+            continuation.resume(returning: .init())
         }
     }
 }
