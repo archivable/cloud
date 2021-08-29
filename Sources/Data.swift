@@ -1,6 +1,10 @@
 import Foundation
 
 extension Data {
+    public static func prototype<P>(url: URL) -> P? where P : Property {
+        (try? Data(contentsOf: url))?.prototype()
+    }
+    
     public var compressed: Self {
         try! (self as NSData).compressed(using: .lzfse) as Self
     }

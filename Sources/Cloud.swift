@@ -99,16 +99,16 @@ public struct Cloud<A> where A : Archived {
                 operation.qualityOfService = .userInteractive
                 operation.configuration.timeoutIntervalForRequest = 10
                 operation.configuration.timeoutIntervalForResource = 10
-                operation.fetchRecordsCompletionBlock = { records, _ in
-                    remote.send(records?.values.first.flatMap {
-                        ($0[asset] as? CKAsset).flatMap {
-                            $0.fileURL.flatMap {
-                                (try? Data(contentsOf: $0)).map {
-                                    $0.prototype()
-                                }
-                            }
-                        }
-                    })
+                operation.perRecordResultBlock = { _, result in
+                    remote.send((try? result.get())
+                                    .flatMap {
+                                        $0[asset] as? CKAsset
+                                    }
+                                    .flatMap {
+                                        $0
+                                            .fileURL
+                                            .flatMap(Data.prototype(url:))
+                                    })
                 }
                 manifest.container.publicCloudDatabase.add(operation)
             }
@@ -211,8 +211,8 @@ public struct Cloud<A> where A : Archived {
             }
             .store(in: &subs)
         
-        local.send(try? Data(contentsOf: manifest.url)
-                    .prototype())
+        local.send(Data.prototype(url: manifest.url))
+        
         notifier.leave()
     }
     
