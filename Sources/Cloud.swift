@@ -6,15 +6,22 @@ public actor Cloud<A> where A : Arch {
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     
     nonisolated let save = PassthroughSubject<A, Never>()
-    private var arch: A
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
     
+    private var arch: A {
+        didSet {
+            Task {
+                let arch = self.arch
+                await MainActor
+                    .run {
+                        self.archive.send(arch)
+                    }
+            }
+        }
+    }
+    
     public init(container: Container?) async {
-        save
-            .subscribe(archive)
-            .store(in: &subs)
-        
         guard let container = container else {
             arch = .new
             return
