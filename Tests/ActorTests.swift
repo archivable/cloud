@@ -3,15 +3,19 @@ import Combine
 @testable import Archivable
 
 final class ActorTests: XCTestCase {
+    private var actor: Actor!
     private var subs: Set<AnyCancellable>!
     
-    override func setUp() {
+    override func setUp(completion: @escaping (Error?) -> Void) {
+        Task {
+            actor = await Actor()
+            completion(nil)
+        }
         subs = .init()
     }
     
     func testInit() async {
-        let act = await Actor()
-        let n = await act.acted.value
+        let n = await actor.acted.value
         XCTAssertEqual(100, n)
     }
     
@@ -19,9 +23,8 @@ final class ActorTests: XCTestCase {
         let expect = expectation(description: "")
         
         Task {
-            let act = await Actor()
-
-            act
+            actor = await Actor()
+            actor
                 .stream
                 .sink {
                     let n = $0.value

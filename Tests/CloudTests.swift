@@ -7,7 +7,9 @@ final class CloudTests: XCTestCase {
     private var subs = Set<AnyCancellable>()
     
     override func setUp() {
-        cloud = .init(manifest: nil)
+        Task {
+            cloud = await .init(manifest: nil)
+        }
     }
     
     /*

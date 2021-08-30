@@ -1,14 +1,14 @@
 import CloudKit
 import Combine
 
-public struct Cloud<A> where A : Arch {
-    public let archive = CurrentValueSubject<A, Never>(.new)
-    public let pull = PassthroughSubject<Void, Never>()
-    let save = PassthroughSubject<A, Never>()
+public actor Cloud<A> where A : Arch {
+    nonisolated public let archive = PassthroughSubject<A, Never>()
+    nonisolated public let pull = PassthroughSubject<Void, Never>()
+    nonisolated let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
-    private let queue = DispatchQueue(label: "", qos: .utility)
+    nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
     
-    public init(manifest: Container?) {
+    public init(manifest: Container?) async {
         save
             .subscribe(archive)
             .store(in: &subs)
@@ -18,8 +18,8 @@ public struct Cloud<A> where A : Arch {
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
-        let record = CurrentValueSubject<CKRecord.ID?, Never>(nil)
         let local = PassthroughSubject<A?, Never>()
+        let record = PassthroughSubject<CKRecord.ID, Never>()
         let type = "Archive"
         let asset = "asset"
         
@@ -60,28 +60,30 @@ public struct Cloud<A> where A : Arch {
         
         pull
             .merge(with: push)
-            .combineLatest(record)
-            .filter {
-                $1 == nil
-            }
-            .map { _, _ in }
-            .sink {
-                manifest.container.accountStatus { status, _ in
-                    if status == .available {
-                        manifest.container.fetchUserRecordID { user, _ in
-                            user.map {
-                                record.send(.init(recordName: type + $0.recordName))
+            .flatMap { _ in
+                Future { promise in
+                    Task
+                        .detached(priority: .utility) {
+                            guard
+                                let status = try? await manifest.container.accountStatus(),
+                                status == .available,
+                                let user = try? await manifest.container.userRecordID()
+                            else {
+                                promise(.success(nil))
+                                return
                             }
+                            promise(.success(.init(recordName: type + user.recordName)))
                         }
-                    }
                 }
             }
-            .store(in: &subs)
-        
-        record
             .compactMap {
                 $0
             }
+            .first()
+            .subscribe(record)
+            .store(in: &subs)
+        
+        record
             .combineLatest(pull)
             .map {
                 ($0.0, Date())
@@ -113,9 +115,6 @@ public struct Cloud<A> where A : Arch {
             .store(in: &subs)
         
         record
-            .compactMap {
-                $0
-            }
             .sink {
                 manifest
                     .container
@@ -137,9 +136,6 @@ public struct Cloud<A> where A : Arch {
             .store(in: &subs)
         
         record
-            .compactMap {
-                $0
-            }
             .combineLatest(push)
             .map { id, _ in
                 id
