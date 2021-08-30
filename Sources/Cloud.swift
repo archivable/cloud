@@ -226,33 +226,22 @@ public actor Cloud<A> where A : Arch {
         local.send(arch)
     }
     
+    public func persist() {
+        save.send(arch)
+    }
+    
+    public func stream() async {
+        let arch = arch
+        await MainActor
+            .run {
+                self.archive.send(arch)
+            }
+    }
     
     
     
     
     
-    
-    
-    
-//    public func mutating(transform: @escaping (inout A) -> Void) {
-//        mutating(save: true, transform: transform) { }
-//    }
-//
-//    public func mutating<T>(transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
-//        mutating(save: true, transform: transform, completion: completion)
-//    }
-//
-//    public func mutating(transform: @escaping (inout A) -> Void, completion: @escaping () -> Void) {
-//        mutating(save: true, transform: transform, completion: completion)
-//    }
-//
-//    public func ephemeral(transform: @escaping (inout A) -> Void) {
-//        mutating(save: false, transform: transform) { }
-//    }
-//
-//    public func ephemeral<T>(transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
-//        mutating(save: false, transform: transform, completion: completion)
-//    }
     
 //    public func receipt(completion: @escaping (Bool) -> Void) {
 //        var sub: AnyCancellable?
@@ -268,39 +257,5 @@ public actor Cloud<A> where A : Arch {
 //                completion(true)
 //            }
 //        pull.send()
-//    }
-    
-//    public func transform<T>(transforming: @escaping (A) -> T?, completion: @escaping (T) -> Void) {
-//        DispatchQueue
-//            .main
-//            .async {
-//                let archive = self.archive.value
-//                queue
-//                    .async {
-//                        let result = transforming(archive)
-//                        DispatchQueue
-//                            .main
-//                            .async {
-//                                result.map(completion)
-//                            }
-//                    }
-//            }
-//    }
-    
-//    private func mutating<T>(save: Bool, transform: @escaping (inout A) -> T?, completion: @escaping (T) -> Void) {
-//        DispatchQueue.main.async {
-//            let current = self.archive.value
-//            var archive = current
-//            let result = transform(&archive)
-//            if archive != current {
-//                if save {
-//                    archive.timestamp = Date().timestamp
-//                    self.save.send(archive)
-//                } else {
-//                    self.archive.send(archive)
-//                }
-//            }
-//            result.map(completion)
-//        }
 //    }
 }
