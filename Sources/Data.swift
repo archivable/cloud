@@ -1,7 +1,7 @@
 import Foundation
 
 extension Data {
-    public static func prototype<P>(url: URL) -> P? where P : Property {
+    public static func prototype<P>(url: URL) -> P? where P : Storable {
         (try? Data(contentsOf: url))?.prototype()
     }
     
@@ -9,12 +9,12 @@ extension Data {
         try! (self as NSData).compressed(using: .lzfse) as Self
     }
     
-    public func prototype<P>() -> P where P : Property {
+    public func prototype<P>() -> P where P : Storable {
         var mutating = self
         return P.init(data: &mutating)
     }
     
-    public func prototype<P>(_ type: P.Type) -> P where P : Property {
+    public func prototype<P>(_ type: P.Type) -> P where P : Storable {
         prototype()
     }
     
