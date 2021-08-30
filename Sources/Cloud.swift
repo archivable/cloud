@@ -95,23 +95,22 @@ public actor Cloud<A> where A : Arch {
             .map {
                 $0.0
             }
-            .sink {
-                let operation = CKFetchRecordsOperation(recordIDs: [$0])
-//                operation.qualityOfService = .userInteractive
-//                operation.configuration.timeoutIntervalForRequest = 10
-//                operation.configuration.timeoutIntervalForResource = 10
-//                operation.perRecordResultBlock = { _, result in
-//                    remote.send((try? result.get())
-//                                    .flatMap {
-//                                        $0[asset] as? CKAsset
-//                                    }
-//                                    .flatMap {
-//                                        $0
-//                                            .fileURL
-//                                            .flatMap(Data.prototype(url:))
-//                                    })
-//                }
-//                manifest.container.publicCloudDatabase.add(operation)
+            .sink { id in
+                Task
+                    .detached(priority: .utility) {
+                        let result = await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base -> A? in
+                            guard
+                                let record = try? await base.record(for: id),
+                                let asset = record[asset] as? CKAsset,
+                                let url = asset.fileURL,
+                                let arch: A = await Data.prototype(url: url)
+                            else {
+                                return nil
+                            }
+                            return arch
+                        }
+                        remote.send(result)
+                    }
             }
             .store(in: &subs)
         
@@ -191,20 +190,24 @@ public actor Cloud<A> where A : Arch {
             .subscribe(push)
             .store(in: &subs)
         
-//        store
-//            .removeDuplicates {
-//                $0.0 >= $1.0
-//            }
-//            .debounce(for: .seconds(1), scheduler: queue)
-//            .sink {
-//                do {
-//                    try $0.0.data.write(to: manifest.url, options: .atomic)
-//                    if $0.1 {
-//                        push.send()
-//                    }
-//                } catch { }
-//            }
-//            .store(in: &subs)
+        store
+            .removeDuplicates {
+                $0.0 >= $1.0
+            }
+            .debounce(for: .seconds(1), scheduler: queue)
+            .sink { storing in
+                Task
+                    .detached(priority: .utility) {
+                        let data = await storing.0.data
+                        do {
+                            try data.write(to: container.url, options: .atomic)
+                            if storing.1 {
+                                push.send()
+                            }
+                        } catch { }
+                    }
+            }
+            .store(in: &subs)
         
         arch = await Task
             .detached(priority: .utility) {
