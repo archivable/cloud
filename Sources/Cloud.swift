@@ -9,7 +9,7 @@ public struct Cloud<A> where A : Archived {
     private var subs = Set<AnyCancellable>()
     private let queue = DispatchQueue(label: "", qos: .userInteractive)
     
-    public init(manifest: Manifest?) {
+    public init(manifest: Container?) {
         save
             .subscribe(archive)
             .store(in: &subs)
