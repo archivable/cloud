@@ -11,7 +11,9 @@ actor Actor {
     nonisolated let stream = PassthroughSubject<Acted, Never>()
     
     init() async {
-        acted = await load()
+        acted = await Task.detached(priority: .utility) {
+            await load()
+        }.value
         update()
     }
     
