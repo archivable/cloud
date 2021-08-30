@@ -1,7 +1,7 @@
 import CloudKit
 
 public struct Container {
-    let container: CKContainer
+    let base: CKContainer
     let url: URL
     
     public init(name: String) {
@@ -11,7 +11,7 @@ public struct Container {
         try? url.setResourceValues(resources)
         
         self.url = url
-        self.container = CKContainer(identifier: name)
+        self.base = CKContainer(identifier: name)
     }
 }
 

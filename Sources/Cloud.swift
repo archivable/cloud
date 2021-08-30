@@ -4,16 +4,21 @@ import Combine
 public actor Cloud<A> where A : Arch {
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
+    
     nonisolated let save = PassthroughSubject<A, Never>()
+    private var arch: A
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
     
-    public init(manifest: Container?) async {
+    public init(container: Container?) async {
         save
             .subscribe(archive)
             .store(in: &subs)
         
-        guard let manifest = manifest else { return }
+        guard let container = container else {
+            arch = .new
+            return
+        }
         
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
@@ -65,9 +70,9 @@ public actor Cloud<A> where A : Arch {
                     Task
                         .detached(priority: .utility) {
                             guard
-                                let status = try? await manifest.container.accountStatus(),
+                                let status = try? await container.base.accountStatus(),
                                 status == .available,
-                                let user = try? await manifest.container.userRecordID()
+                                let user = try? await container.base.userRecordID()
                             else {
                                 promise(.success(nil))
                                 return
@@ -116,13 +121,13 @@ public actor Cloud<A> where A : Arch {
         
         record
             .sink {
-                manifest
-                    .container
+                container
+                    .base
                     .publicCloudDatabase
                     .fetchAllSubscriptions { subs, _ in
                         subs?
                             .forEach {
-                                manifest.container.publicCloudDatabase.delete(withSubscriptionID: $0.subscriptionID) { _, _ in }
+                                container.base.publicCloudDatabase.delete(withSubscriptionID: $0.subscriptionID) { _, _ in }
                             }
                     }
                 
@@ -131,7 +136,7 @@ public actor Cloud<A> where A : Arch {
                     predicate: .init(format: "recordID = %@", $0),
                     options: [.firesOnRecordUpdate])
                 subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                manifest.container.publicCloudDatabase.save(subscription) { _, _ in }
+                container.base.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)
         
@@ -142,13 +147,13 @@ public actor Cloud<A> where A : Arch {
             }
             .sink {
                 let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: manifest.url)
+                record[asset] = CKAsset(fileURL: container.url)
                 let operation = CKModifyRecordsOperation(recordsToSave: [record])
                 operation.qualityOfService = .userInteractive
                 operation.configuration.timeoutIntervalForRequest = 15
                 operation.configuration.timeoutIntervalForResource = 15
                 operation.savePolicy = .allKeys
-                manifest.container.publicCloudDatabase.add(operation)
+                container.base.publicCloudDatabase.add(operation)
             }
             .store(in: &subs)
         
@@ -205,9 +210,13 @@ public actor Cloud<A> where A : Arch {
 //            }
 //            .store(in: &subs)
         
-//        Task.detached(priority: .utility) {
-//            local.send(Data.prototype(url: manifest.url))
-//        }
+        arch = await Task
+            .detached(priority: .utility) {
+                await Data.prototype(url: container.url)
+            }
+            .value
+            ?? .new
+        local.send(arch)
     }
     
     

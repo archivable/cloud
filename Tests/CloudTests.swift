@@ -8,7 +8,7 @@ final class CloudTests: XCTestCase {
     
     override func setUp() {
         Task {
-            cloud = await .init(manifest: nil)
+            cloud = await .init(container: nil)
         }
     }
     
