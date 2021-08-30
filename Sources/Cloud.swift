@@ -144,15 +144,15 @@ public actor Cloud<A> where A : Arch {
             .map { id, _ in
                 id
             }
-            .sink {
-                let record = CKRecord(recordType: type, recordID: $0)
-                record[asset] = CKAsset(fileURL: container.url)
-                let operation = CKModifyRecordsOperation(recordsToSave: [record])
-                operation.qualityOfService = .userInteractive
-                operation.configuration.timeoutIntervalForRequest = 15
-                operation.configuration.timeoutIntervalForResource = 15
-                operation.savePolicy = .allKeys
-                container.base.publicCloudDatabase.add(operation)
+            .sink { id in
+                Task
+                    .detached(priority: .utility) {
+                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+                            let record = CKRecord(recordType: type, recordID: id)
+                            record[asset] = CKAsset(fileURL: container.url)
+                            _ = try? await base.modifyRecords(saving: [record], deleting: [])
+                        }
+                    }
             }
             .store(in: &subs)
         
