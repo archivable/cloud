@@ -226,6 +226,24 @@ public actor Cloud<A> where A : Arch {
         local.send(arch)
     }
     
+    public var notified: Bool {
+        get async {
+            await withUnsafeContinuation { continuation in
+                var sub: AnyCancellable?
+                sub = archive
+                    .timeout(.seconds(9), scheduler: queue)
+                    .sink { _ in
+                        sub?.cancel()
+                        continuation.resume(returning: false)
+                    } receiveValue: { _ in
+                        sub?.cancel()
+                        continuation.resume(returning: true)
+                    }
+                pull.send()
+            }
+        }
+    }
+    
     public func persist() {
         save.send(arch)
     }
@@ -237,25 +255,4 @@ public actor Cloud<A> where A : Arch {
                 self.archive.send(arch)
             }
     }
-    
-    
-    
-    
-    
-    
-//    public func receipt(completion: @escaping (Bool) -> Void) {
-//        var sub: AnyCancellable?
-//        sub = archive
-//            .dropFirst()
-//            .map { _ in }
-//            .timeout(.seconds(6), scheduler: queue)
-//            .sink { _ in
-//                sub?.cancel()
-//                completion(false)
-//            } receiveValue: {
-//                sub?.cancel()
-//                completion(true)
-//            }
-//        pull.send()
-//    }
 }
