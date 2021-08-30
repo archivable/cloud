@@ -115,23 +115,27 @@ public actor Cloud<A> where A : Arch {
             .store(in: &subs)
         
         record
-            .sink {
-                container
-                    .base
-                    .publicCloudDatabase
-                    .fetchAllSubscriptions { subs, _ in
-                        subs?
-                            .forEach {
-                                container.base.publicCloudDatabase.delete(withSubscriptionID: $0.subscriptionID) { _, _ in }
-                            }
+            .sink { id in
+                Task
+                    .detached(priority: .utility) {
+                        let subscriptions = try? await container.base.publicCloudDatabase.allSubscriptions()
+                        await withTaskGroup(of: Void.self) { group in
+                            subscriptions?
+                                .forEach { sub in
+                                    group
+                                        .addTask {
+                                            _ = try? await container.base.publicCloudDatabase.deleteSubscription(withID: sub.subscriptionID)
+                                        }
+                                }
+                        }
+                        
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                        _ = try? await container.base.publicCloudDatabase.save(subscription)
                     }
-                
-                let subscription = CKQuerySubscription(
-                    recordType: type,
-                    predicate: .init(format: "recordID = %@", $0),
-                    options: [.firesOnRecordUpdate])
-                subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                container.base.publicCloudDatabase.save(subscription) { _, _ in }
             }
             .store(in: &subs)
         
