@@ -118,23 +118,20 @@ public actor Cloud<A> where A : Arch {
             .sink { id in
                 Task
                     .detached(priority: .utility) {
-                        let subscriptions = try? await container.base.publicCloudDatabase.allSubscriptions()
-                        await withTaskGroup(of: Void.self) { group in
-                            subscriptions?
-                                .forEach { sub in
-                                    group
-                                        .addTask {
-                                            _ = try? await container.base.publicCloudDatabase.deleteSubscription(withID: sub.subscriptionID)
-                                        }
-                                }
+                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+                            let old = try? await base.allSubscriptions()
+                            
+                            let subscription = CKQuerySubscription(
+                                recordType: type,
+                                predicate: .init(format: "recordID = %@", id),
+                                options: [.firesOnRecordUpdate])
+                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                            
+                            _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                    deleting: old?
+                                                                        .map(\.subscriptionID)
+                                                                    ?? [])
                         }
-                        
-                        let subscription = CKQuerySubscription(
-                            recordType: type,
-                            predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                        _ = try? await container.base.publicCloudDatabase.save(subscription)
                     }
             }
             .store(in: &subs)
@@ -219,6 +216,7 @@ public actor Cloud<A> where A : Arch {
             }
             .value
             ?? .new
+        
         local.send(arch)
     }
     
