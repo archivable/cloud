@@ -32,7 +32,7 @@ final class DataTests: XCTestCase {
             }
     }
     
-    func testPrototype() {
+    func testPrototype() async {
         struct A: Equatable, Storable {
             let number: Int
             
@@ -50,13 +50,15 @@ final class DataTests: XCTestCase {
             }
         }
         
-        XCTAssertEqual(A(number: 5), Data()
-                                        .adding(A(number: 5).data)
-                                        .prototype())
+        let a = await Data()
+            .adding(A(number: 5).data)
+            .prototype() as A
+        XCTAssertEqual(A(number: 5), a)
         
-        XCTAssertEqual(5, Data()
-                            .adding(A(number: 5).data)
-                            .prototype(A.self)
-                            .number)
+        let b = await Data()
+            .adding(A(number: 5).data)
+            .prototype(A.self)
+            .number
+        XCTAssertEqual(5, b)
     }
 }

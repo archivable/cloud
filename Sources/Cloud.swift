@@ -94,21 +94,21 @@ public struct Cloud<A> where A : Arch {
             }
             .sink {
                 let operation = CKFetchRecordsOperation(recordIDs: [$0])
-                operation.qualityOfService = .userInteractive
-                operation.configuration.timeoutIntervalForRequest = 10
-                operation.configuration.timeoutIntervalForResource = 10
-                operation.perRecordResultBlock = { _, result in
-                    remote.send((try? result.get())
-                                    .flatMap {
-                                        $0[asset] as? CKAsset
-                                    }
-                                    .flatMap {
-                                        $0
-                                            .fileURL
-                                            .flatMap(Data.prototype(url:))
-                                    })
-                }
-                manifest.container.publicCloudDatabase.add(operation)
+//                operation.qualityOfService = .userInteractive
+//                operation.configuration.timeoutIntervalForRequest = 10
+//                operation.configuration.timeoutIntervalForResource = 10
+//                operation.perRecordResultBlock = { _, result in
+//                    remote.send((try? result.get())
+//                                    .flatMap {
+//                                        $0[asset] as? CKAsset
+//                                    }
+//                                    .flatMap {
+//                                        $0
+//                                            .fileURL
+//                                            .flatMap(Data.prototype(url:))
+//                                    })
+//                }
+//                manifest.container.publicCloudDatabase.add(operation)
             }
             .store(in: &subs)
         
@@ -194,25 +194,33 @@ public struct Cloud<A> where A : Arch {
             .subscribe(push)
             .store(in: &subs)
         
-        store
-            .removeDuplicates {
-                $0.0 >= $1.0
-            }
-            .debounce(for: .seconds(1), scheduler: queue)
-            .sink {
-                do {
-                    try $0.0.data.write(to: manifest.url, options: .atomic)
-                    if $0.1 {
-                        push.send()
-                    }
-                } catch { }
-            }
-            .store(in: &subs)
+//        store
+//            .removeDuplicates {
+//                $0.0 >= $1.0
+//            }
+//            .debounce(for: .seconds(1), scheduler: queue)
+//            .sink {
+//                do {
+//                    try $0.0.data.write(to: manifest.url, options: .atomic)
+//                    if $0.1 {
+//                        push.send()
+//                    }
+//                } catch { }
+//            }
+//            .store(in: &subs)
         
-        Task.detached(priority: .utility) {
-            local.send(Data.prototype(url: manifest.url))
-        }
+//        Task.detached(priority: .utility) {
+//            local.send(Data.prototype(url: manifest.url))
+//        }
     }
+    
+    
+    
+    
+    
+    
+    
+    
     
 //    public func mutating(transform: @escaping (inout A) -> Void) {
 //        mutating(save: true, transform: transform) { }
