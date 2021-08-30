@@ -2,18 +2,16 @@ import CloudKit
 import Combine
 
 public struct Cloud<A> where A : Archived {
-    public let notifier = DispatchGroup()
     public let archive = CurrentValueSubject<A, Never>(.new)
     public let pull = PassthroughSubject<Void, Never>()
     let save = PassthroughSubject<A, Never>()
     private var subs = Set<AnyCancellable>()
-    private let queue = DispatchQueue(label: "", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "", qos: .utility)
     
     public init(manifest: Container?) {
         save
             .subscribe(archive)
             .store(in: &subs)
-        notifier.enter()
         
         guard let manifest = manifest else { return }
         
@@ -72,7 +70,7 @@ public struct Cloud<A> where A : Archived {
                     if status == .available {
                         manifest.container.fetchUserRecordID { user, _ in
                             user.map {
-                                record.send(.init(recordName: manifest.prefix + $0.recordName))
+                                record.send(.init(recordName: type + $0.recordName))
                             }
                         }
                     }
@@ -214,8 +212,6 @@ public struct Cloud<A> where A : Archived {
         Task.detached(priority: .utility) {
             local.send(Data.prototype(url: manifest.url))
         }
-        
-        notifier.leave()
     }
     
     public func mutating(transform: @escaping (inout A) -> Void) {
