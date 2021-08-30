@@ -2,11 +2,11 @@ import CloudKit
 import Combine
 
 public actor Cloud<A> where A : Arch {
+    public var arch: A
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     
-    nonisolated let save = PassthroughSubject<A, Never>()
-    private var arch: A
+    nonisolated let save = PassthroughSubject<A, Never>()    
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
     
@@ -236,6 +236,10 @@ public actor Cloud<A> where A : Arch {
                 pull.send()
             }
         }
+    }
+    
+    public func timestamp() {
+        arch.timestamp = Date().timestamp
     }
     
     public func persist() {
