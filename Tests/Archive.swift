@@ -1,7 +1,7 @@
 import Foundation
 import Archivable
 
-struct ArchiveMock: Arch {
+struct Archive: Arch {
     static let new = Self()
     var timestamp: UInt32
     var counter = 0

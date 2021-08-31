@@ -238,19 +238,15 @@ public actor Cloud<A> where A : Arch {
         }
     }
     
-    public func timestamp() {
-        arch.timestamp = .now
-    }
-    
-    public func persist() {
-        save.send(arch)
-    }
-    
     public func stream() async {
+        arch.timestamp = .now
         let arch = arch
+        
         await MainActor
             .run {
                 self.archive.send(arch)
             }
+        
+        save.send(arch)
     }
 }

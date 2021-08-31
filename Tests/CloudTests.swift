@@ -3,7 +3,7 @@ import Combine
 @testable import Archivable
 
 final class CloudTests: XCTestCase {
-    private var cloud: Cloud<ArchiveMock>!
+    private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
     
     override func setUp(completion: @escaping (Error?) -> Void) {
@@ -26,7 +26,7 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.increaseCounterPersist()
+        await cloud.increaseCounter()
         await waitForExpectations(timeout: 1)
     }
     
@@ -42,7 +42,7 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.increaseCounterStream()
+        await cloud.increaseCounter()
         await waitForExpectations(timeout: 1)
     }
 }
