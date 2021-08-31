@@ -195,7 +195,7 @@ public actor Cloud<A> where A : Arch {
             .removeDuplicates {
                 $0.0 >= $1.0
             }
-            .debounce(for: .seconds(1), scheduler: queue)
+            .debounce(for: .milliseconds(500), scheduler: queue)
             .sink { storing in
                 Task
                     .detached(priority: .utility) {
