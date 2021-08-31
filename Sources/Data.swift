@@ -6,7 +6,13 @@ extension Data {
     }
     
     public var compressed: Self {
-        try! (self as NSData).compressed(using: .lzfse) as Self
+        get async {
+            await Task
+                .detached(priority: .utility) {
+                    try! (self as NSData).compressed(using: .lzfse) as Self
+                }
+                .value
+        }
     }
     
     public func prototype<P>() async -> P where P : Storable {
@@ -18,13 +24,18 @@ extension Data {
         await prototype()
     }
     
-    public func mutating<M>(transform: (inout Self) -> M) -> M {
+    public func mutating<M>(transform: (inout Self) async -> M) async -> M {
         var mutating = self
-        return transform(&mutating)
+        return await transform(&mutating)
     }
     
-    public mutating func decompress() {
-        self = try! (self as NSData).decompressed(using: .lzfse) as Self
+    public mutating func decompress() async {
+        let data = (self as NSData)
+        self = await Task
+            .detached(priority: .utility) {
+                try! data.decompressed(using: .lzfse) as Self
+            }
+            .value
     }
     
     public mutating func unwrap() -> Data {
