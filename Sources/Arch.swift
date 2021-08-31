@@ -22,7 +22,7 @@ extension Arch {
         }
     }
     
-    public static func prototype(data: Data) async -> Self {
+    static func prototype(data: Data) async -> Self {
         var data = await data
             .decompress
         
