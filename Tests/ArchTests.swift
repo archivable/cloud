@@ -15,4 +15,9 @@ final class ArchTests: XCTestCase {
         XCTAssertEqual(99, parsed.counter)
         XCTAssertEqual(123, parsed.timestamp)
     }
+    
+    func testVersion() async {
+        let version = await archive.compressed.decompress.first
+        XCTAssertEqual(128, version)
+    }
 }

@@ -2,19 +2,20 @@ import Foundation
 import Archivable
 
 struct Archive: Arch {
+    static var version = UInt8(128)
     static let new = Self()
+    
     var counter: Int
     var timestamp: UInt32
     
     var data: Data {
         get async {
             .init()
-                .adding(timestamp)
                 .adding(UInt8(counter))
         }
     }
     
-    init(timestamp: UInt32, data: inout Data) async {
+    init(version: UInt8, timestamp: UInt32, data: inout Data) async {
         self.timestamp = timestamp
         counter = .init(data.removeFirst())
     }
