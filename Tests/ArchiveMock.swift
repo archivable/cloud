@@ -12,7 +12,7 @@ struct ArchiveMock: Arch {
     }
     
     public init(data: inout Data) {
-        timestamp = Date().timestamp
+        timestamp = .now
     }
     
     private init() {

@@ -44,7 +44,7 @@ public actor Cloud<A> where A : Arch {
                             }
                             .merge(with: save
                                             .map { _ -> (A?, UInt32) in
-                                                (nil, Date().timestamp)
+                                                (nil, .now)
                                             })
                             .removeDuplicates {
                                 $0.1 >= $1.1
@@ -239,7 +239,7 @@ public actor Cloud<A> where A : Arch {
     }
     
     public func timestamp() {
-        arch.timestamp = Date().timestamp
+        arch.timestamp = .now
     }
     
     public func persist() {
