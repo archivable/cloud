@@ -103,11 +103,11 @@ public actor Cloud<A> where A : Arch {
                                 let record = try? await base.record(for: id),
                                 let asset = record[asset] as? CKAsset,
                                 let url = asset.fileURL,
-                                let arch: A = await Data.prototype(url: url)
+                                let data = try? Data(contentsOf: url)
                             else {
                                 return nil
                             }
-                            return arch
+                            return await .prototype(data: data)
                         }
                         remote.send(result)
                     }
@@ -199,7 +199,9 @@ public actor Cloud<A> where A : Arch {
             .sink { storing in
                 Task
                     .detached(priority: .utility) {
-                        let data = await storing.0.data
+                        let data = await storing
+                            .0
+                            .compressed
                         do {
                             try data.write(to: container.url, options: .atomic)
                             if storing.1 {
@@ -212,7 +214,8 @@ public actor Cloud<A> where A : Arch {
         
         arch = await Task
             .detached(priority: .utility) {
-                await Data.prototype(url: container.url)
+                guard let data = try? Data(contentsOf: container.url) else { return nil }
+                return await .prototype(data: data)
             }
             .value
             ?? .new
@@ -240,6 +243,7 @@ public actor Cloud<A> where A : Arch {
     
     public func stream() async {
         arch.timestamp = .now
+        
         let arch = arch
         
         await MainActor

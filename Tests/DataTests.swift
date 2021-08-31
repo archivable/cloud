@@ -2,8 +2,8 @@ import XCTest
 import Archivable
 
 final class DataTests: XCTestCase {
-    func testPrimitives() async {
-        await Data()
+    func testPrimitives() {
+        Data()
             .adding(UInt8(1))
             .adding(UInt16(2))
             .adding(UInt32(3))
@@ -15,9 +15,7 @@ final class DataTests: XCTestCase {
                         .flatMap(\.data))
             .adding(UUID())
             .wrapping(Data([1,2,3,4,5,6]))
-            .compressed
             .mutating {
-                await $0.decompress()
                 XCTAssertEqual(1, $0.removeFirst())
                 XCTAssertEqual(2, $0.uInt16())
                 XCTAssertEqual(3, $0.uInt32())
@@ -32,8 +30,8 @@ final class DataTests: XCTestCase {
             }
     }
     
-    func testPrototype() async {
-        struct A: Equatable, Storable {
+    func testPrototype() {
+        struct A: Storable {
             let number: Int
             
             var data: Data {
@@ -50,15 +48,13 @@ final class DataTests: XCTestCase {
             }
         }
         
-        let a = await Data()
-            .adding(A(number: 5).data)
-            .prototype() as A
-        XCTAssertEqual(A(number: 5), a)
+        XCTAssertEqual(A(number: 5), Data()
+                        .adding(A(number: 5).data)
+                        .prototype())
         
-        let b = await Data()
-            .adding(A(number: 5).data)
-            .prototype(A.self)
-            .number
-        XCTAssertEqual(5, b)
+        XCTAssertEqual(5, Data()
+                        .adding(A(number: 5).data)
+                        .prototype(A.self)
+                        .number)
     }
 }

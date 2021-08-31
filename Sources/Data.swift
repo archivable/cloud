@@ -1,8 +1,8 @@
 import Foundation
 
 extension Data {
-    public static func prototype<P>(url: URL) async -> P? where P : Storable {
-        await (try? Data(contentsOf: url))?.prototype()
+    public static func prototype<P>(url: URL) -> P? where P : Storable {
+        (try? Data(contentsOf: url))?.prototype()
     }
     
     public var compressed: Self {
@@ -15,27 +15,28 @@ extension Data {
         }
     }
     
-    public func prototype<P>() async -> P where P : Storable {
+    public var decompress: Self {
+        get async {
+            await Task
+                .detached(priority: .utility) {
+                    try! (self as NSData).decompressed(using: .lzfse) as Self
+                }
+                .value
+        }
+    }
+    
+    public func prototype<P>() -> P where P : Storable {
         var mutating = self
-        return await P.init(data: &mutating)
+        return .init(data: &mutating)
     }
     
-    public func prototype<P>(_ type: P.Type) async -> P where P : Storable {
-        await prototype()
+    public func prototype<P>(_ type: P.Type) -> P where P : Storable {
+        prototype()
     }
     
-    public func mutating<M>(transform: (inout Self) async -> M) async -> M {
+    public func mutating<M>(transform: (inout Self) -> M) -> M {
         var mutating = self
-        return await transform(&mutating)
-    }
-    
-    public mutating func decompress() async {
-        let data = (self as NSData)
-        self = await Task
-            .detached(priority: .utility) {
-                try! data.decompressed(using: .lzfse) as Self
-            }
-            .value
+        return transform(&mutating)
     }
     
     public mutating func unwrap() -> Data {

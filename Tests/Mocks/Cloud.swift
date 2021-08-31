@@ -7,4 +7,3 @@ extension Cloud where A == Archive {
         await stream()
     }
 }
-

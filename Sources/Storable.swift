@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol Storable: Equatable {
-    var data: Data { get async }
+    var data: Data { get }
     
-    init(data: inout Data) async
+    init(data: inout Data)
 }
