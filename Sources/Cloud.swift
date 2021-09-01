@@ -227,6 +227,17 @@ public actor Cloud<A> where A : Arch {
             }
             .store(in: &subs)
         
+        remote
+            .compactMap {
+                $0
+            }
+            .removeDuplicates()
+            .sink {
+                guard $0.timestamp > self.arch.timestamp else { return }
+                self.arch = $0
+            }
+            .store(in: &subs)
+        
         arch = await Task
             .detached(priority: .utility) {
                 guard let data = try? Data(contentsOf: container.url) else { return nil }
