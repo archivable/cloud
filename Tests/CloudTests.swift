@@ -6,12 +6,9 @@ final class CloudTests: XCTestCase {
     private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
     
-    override func setUp(completion: @escaping (Error?) -> Void) {
-        Task {
-            cloud = await .init(container: nil)
-            completion(nil)
-        }
-        subs = .init()
+    override func setUp() async throws {
+        cloud = await .init(container: nil)
+        subs = []
     }
     
     func testPersist() async {
