@@ -114,14 +114,8 @@ public actor Cloud<A> where A : Arch {
                 Task
                     .detached(priority: .utility) {
                         let result = await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base -> A? in
-                            let record: CKRecord!
-                            do {
-                                record = try await base.record(for: id)
-                            } catch let error {
-                                print(error)
-                                return nil
-                            }
                             guard
+                                let record = try? await base.record(for: id),
                                 let asset = record[asset] as? CKAsset,
                                 let url = asset.fileURL,
                                 let data = try? Data(contentsOf: url)
@@ -168,7 +162,7 @@ public actor Cloud<A> where A : Arch {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
                             let record = CKRecord(recordType: type, recordID: id)
                             record[asset] = CKAsset(fileURL: container.url)
-                            _ = try? await base.modifyRecords(saving: [record], deleting: [])
+                            _ = try? await base.modifyRecords(saving: [record], deleting: [id])
                         }
                     }
             }
