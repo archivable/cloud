@@ -2,7 +2,7 @@ import CloudKit
 import Combine
 
 public actor Cloud<A> where A : Arch {
-    public var arch: A
+    public var arch = A.new
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     
@@ -10,12 +10,27 @@ public actor Cloud<A> where A : Arch {
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
     
-    public init(container: Container?) async {
-        guard let container = container else {
-            arch = .new
-            return
+    public init() {  }
+    
+    public var notified: Bool {
+        get async {
+            await withUnsafeContinuation { continuation in
+                var sub: AnyCancellable?
+                sub = archive
+                    .timeout(.seconds(9), scheduler: queue)
+                    .sink { _ in
+                        sub?.cancel()
+                        continuation.resume(returning: false)
+                    } receiveValue: { _ in
+                        sub?.cancel()
+                        continuation.resume(returning: true)
+                    }
+                pull.send()
+            }
         }
-        
+    }
+    
+    public func load(container: Container) async {
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
@@ -221,24 +236,6 @@ public actor Cloud<A> where A : Arch {
             ?? .new
         
         local.send(arch)
-    }
-    
-    public var notified: Bool {
-        get async {
-            await withUnsafeContinuation { continuation in
-                var sub: AnyCancellable?
-                sub = archive
-                    .timeout(.seconds(9), scheduler: queue)
-                    .sink { _ in
-                        sub?.cancel()
-                        continuation.resume(returning: false)
-                    } receiveValue: { _ in
-                        sub?.cancel()
-                        continuation.resume(returning: true)
-                    }
-                pull.send()
-            }
-        }
     }
     
     public func stream() async {
