@@ -15,7 +15,7 @@ extension Data {
         }
     }
     
-    public var decompress: Self {
+    public var decompressed: Self {
         get async {
             await Task
                 .detached(priority: .utility) {

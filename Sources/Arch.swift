@@ -24,7 +24,7 @@ extension Arch {
     
     static func prototype(data: Data) async -> Self {
         var data = await data
-            .decompress
+            .decompressed
         
         return await .init(version: data.removeFirst(), timestamp: data.uInt32(), data: &data)
     }
