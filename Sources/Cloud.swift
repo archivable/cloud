@@ -162,26 +162,7 @@ public actor Cloud<A> where A : Arch {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
                             let record = CKRecord(recordType: type, recordID: id)
                             record[asset] = CKAsset(fileURL: container.url)
-                            
-                            do {
-                                let res = try await base.modifyRecords(saving: [record], deleting: [])
-                                switch res.saveResults[id] {
-                                case .success:
-                                    print("save suc")
-                                case let .failure(error):
-                                    print(error)
-                                default: break
-                                }
-                                switch res.deleteResults[id] {
-                                case .success:
-                                    print("delete suc")
-                                case let .failure(error):
-                                    print(error)
-                                default: break
-                                }
-                            } catch let error {
-                                print(error)
-                            }
+                            _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                         }
                     }
             }
