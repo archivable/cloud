@@ -15,7 +15,8 @@ struct Archive: Arch {
         }
     }
     
-    init(version: UInt8, timestamp: UInt32, data: inout Data) async {
+    init(version: UInt8, timestamp: UInt32, data: Data) async {
+        var data = data
         self.timestamp = timestamp
         counter = .init(data.removeFirst())
     }

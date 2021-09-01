@@ -7,7 +7,7 @@ public protocol Arch: Comparable {
     var data: Data { get async }
     var timestamp: UInt32 { get set }
     
-    init(version: UInt8, timestamp: UInt32, data: inout Data) async
+    init(version: UInt8, timestamp: UInt32, data: Data) async
 }
 
 extension Arch {
@@ -26,7 +26,7 @@ extension Arch {
         var data = await data
             .decompressed
         
-        return await .init(version: data.removeFirst(), timestamp: data.uInt32(), data: &data)
+        return await .init(version: data.removeFirst(), timestamp: data.uInt32(), data: data)
     }
     
     public static func < (lhs: Self, rhs: Self) -> Bool {
