@@ -164,7 +164,7 @@ public actor Cloud<A> where A : Arch {
                             record[asset] = CKAsset(fileURL: container.url)
                             
                             do {
-                                let res = try await base.modifyRecords(saving: [record], deleting: [id])
+                                let res = try await base.modifyRecords(saving: [record], deleting: [])
                                 switch res.saveResults[id] {
                                 case .success:
                                     print("save suc")
