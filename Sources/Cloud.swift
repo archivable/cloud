@@ -131,27 +131,19 @@ public final actor Cloud<A> where A : Arch {
         
         record
             .sink { id in
-                Task {
-                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
-                            print(id)
-                            let old: [CKSubscription]
-                            do {
-                                old = try await base.allSubscriptions()
-                            } catch let error {
-                                print(error)
-                                return
-                            }
+                Task
+                    .detached(priority: .utility) {
+                        
+                        let old = try? await container.base.publicCloudDatabase.allSubscriptions()
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
 
-                            let subscription = CKQuerySubscription(
-                                recordType: type,
-                                predicate: .init(format: "recordID = %@", id),
-                                options: [.firesOnRecordUpdate])
-                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-
-                            _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                    deleting: old
-                                                                        .map(\.subscriptionID))
-                        }
+                        _ = try? await container.base.publicCloudDatabase.modifySubscriptions(saving: [subscription],
+                                                                deleting: old?
+                                                                    .map(\.subscriptionID) ?? [])
                     }
             }
             .store(in: &subs)
