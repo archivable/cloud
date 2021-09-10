@@ -134,7 +134,7 @@ public final actor Cloud<A> where A : Arch {
                 Task
                     .detached(priority: .utility) {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
-//                            let old = try? await base.allSu§bscriptions()
+                            async let old = try? base.allSubscriptions()
 
                             let subscription = CKQuerySubscription(
                                 recordType: type,
