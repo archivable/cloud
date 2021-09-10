@@ -134,7 +134,14 @@ public final actor Cloud<A> where A : Arch {
                 Task
                     .detached(priority: .utility) {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
-                            async let old = try? base.allSubscriptions()
+                            print(id)
+                            let old: [CKSubscription]
+                            do {
+                                old = try await base.allSubscriptions()
+                            } catch let error {
+                                print(error)
+                                return
+                            }
 
                             let subscription = CKQuerySubscription(
                                 recordType: type,
@@ -143,9 +150,8 @@ public final actor Cloud<A> where A : Arch {
                             subscription.notificationInfo = .init(shouldSendContentAvailable: true)
 
                             _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                    deleting: old?
-                                                                        .map(\.subscriptionID)
-                                                                    ?? [])
+                                                                    deleting: old
+                                                                        .map(\.subscriptionID))
                         }
                     }
             }
