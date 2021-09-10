@@ -1,7 +1,7 @@
 import CloudKit
 import Combine
 
-public actor Cloud<A> where A : Arch {
+public final actor Cloud<A> where A : Arch {
     public var arch = A.new
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
@@ -36,8 +36,8 @@ public actor Cloud<A> where A : Arch {
         let remote = PassthroughSubject<A?, Never>()
         let local = PassthroughSubject<A?, Never>()
         let record = PassthroughSubject<CKRecord.ID, Never>()
-        let type = "Archive"
-        let asset = "asset"
+        let type = "Model"
+        let asset = "archive"
         
         save
             .map {
