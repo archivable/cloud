@@ -8,7 +8,7 @@ public final actor Cloud<A> where A : Arch {
     
     nonisolated let save = PassthroughSubject<A, Never>()    
     private var subs = Set<AnyCancellable>()
-    nonisolated private let queue = DispatchQueue(label: "", qos: .utility)
+    nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
     public init() {  }
     
@@ -79,7 +79,7 @@ public final actor Cloud<A> where A : Arch {
             .flatMap { _ in
                 Future { promise in
                     Task
-                        .detached(priority: .utility) {
+                        .detached(priority: .userInitiated) {
                             guard
                                 let status = try? await container.base.accountStatus(),
                                 status == .available,
@@ -112,7 +112,7 @@ public final actor Cloud<A> where A : Arch {
             }
             .sink { id in
                 Task
-                    .detached(priority: .utility) {
+                    .detached(priority: .userInitiated) {
                         let result = await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base -> A? in
                             guard
                                 let record = try? await base.record(for: id),
@@ -132,18 +132,21 @@ public final actor Cloud<A> where A : Arch {
         record
             .sink { id in
                 Task
-                    .detached(priority: .utility) {
-                        
-                        let old = try? await container.base.publicCloudDatabase.allSubscriptions()
-                        let subscription = CKQuerySubscription(
-                            recordType: type,
-                            predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-
-                        _ = try? await container.base.publicCloudDatabase.modifySubscriptions(saving: [subscription],
-                                                                deleting: old?
-                                                                    .map(\.subscriptionID) ?? [])
+                    .detached(priority: .userInitiated) {
+                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+                            let subscription = CKQuerySubscription(
+                                recordType: type,
+                                predicate: .init(format: "recordID = %@", id),
+                                options: [.firesOnRecordUpdate])
+                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                            
+                            let old = try? await base.allSubscriptions()
+                            
+                            _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                    deleting: old?
+                                                                        .map(\.subscriptionID)
+                                                                    ?? [])
+                        }
                     }
             }
             .store(in: &subs)
@@ -155,7 +158,7 @@ public final actor Cloud<A> where A : Arch {
             }
             .sink { id in
                 Task
-                    .detached(priority: .utility) {
+                    .detached(priority: .userInitiated) {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
                             let record = CKRecord(recordType: type, recordID: id)
                             record[asset] = CKAsset(fileURL: container.url)
@@ -210,7 +213,7 @@ public final actor Cloud<A> where A : Arch {
             .debounce(for: .milliseconds(500), scheduler: queue)
             .sink { storing in
                 Task
-                    .detached(priority: .utility) {
+                    .detached(priority: .userInitiated) {
                         let data = await storing
                             .0
                             .compressed
@@ -236,7 +239,7 @@ public final actor Cloud<A> where A : Arch {
             .store(in: &subs)
         
         arch = await Task
-            .detached(priority: .utility) {
+            .detached(priority: .userInitiated) {
                 guard let data = try? Data(contentsOf: container.url) else { return nil }
                 return await .prototype(data: data)
             }
