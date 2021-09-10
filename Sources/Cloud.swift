@@ -131,8 +131,7 @@ public final actor Cloud<A> where A : Arch {
         
         record
             .sink { id in
-                Task
-                    .detached(priority: .utility) {
+                Task {
                         await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
                             print(id)
                             let old: [CKSubscription]
