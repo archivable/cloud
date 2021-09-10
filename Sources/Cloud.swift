@@ -140,12 +140,17 @@ public final actor Cloud<A> where A : Arch {
                                 options: [.firesOnRecordUpdate])
                             subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                             
-                            let old = try? await base.allSubscriptions()
+                            let saved = try? await base.modifySubscriptions(saving: [subscription], deleting: [])
+                                .saveResults
+                                .first?
+                                .key
                             
-                            _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                    deleting: old?
-                                                                        .map(\.subscriptionID)
-                                                                    ?? [])
+                            if let old = try? await base.allSubscriptions() {
+                                _ = try? await base.modifySubscriptions(saving: [],
+                                                                        deleting: old
+                                                                            .map(\.subscriptionID)
+                                                                            .filter { $0 != saved })
+                            }
                         }
                     }
             }
