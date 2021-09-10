@@ -133,20 +133,20 @@ public final actor Cloud<A> where A : Arch {
             .sink { id in
                 Task
                     .detached(priority: .utility) {
-                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
-                            let old = try? await base.allSubscriptions()
-                            
-                            let subscription = CKQuerySubscription(
-                                recordType: type,
-                                predicate: .init(format: "recordID = %@", id),
-                                options: [.firesOnRecordUpdate])
-                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                            
-                            _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                    deleting: old?
-                                                                        .map(\.subscriptionID)
-                                                                    ?? [])
-                        }
+//                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+//                            let old = try? await base.allSubscriptions()
+//
+//                            let subscription = CKQuerySubscription(
+//                                recordType: type,
+//                                predicate: .init(format: "recordID = %@", id),
+//                                options: [.firesOnRecordUpdate])
+//                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+//
+//                            _ = try? await base.modifySubscriptions(saving: [subscription],
+//                                                                    deleting: old?
+//                                                                        .map(\.subscriptionID)
+//                                                                    ?? [])
+//                        }
                     }
             }
             .store(in: &subs)
