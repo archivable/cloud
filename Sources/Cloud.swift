@@ -2,6 +2,15 @@ import CloudKit
 import Combine
 
 public final actor Cloud<A> where A : Arch {
+    public static var new: Self {
+        let cloud = Self()
+        Task
+            .detached(priority: .userInitiated) {
+                await cloud.load()
+            }
+        return cloud
+    }
+    
     public var arch = A.new
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
@@ -9,8 +18,6 @@ public final actor Cloud<A> where A : Arch {
     nonisolated let save = PassthroughSubject<A, Never>()    
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
-    
-    public init() {  }
     
     public var notified: Bool {
         get async {
