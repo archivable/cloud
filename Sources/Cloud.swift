@@ -30,14 +30,24 @@ public final actor Cloud<A> where A : Arch {
         }
     }
     
-    public func load(container: Container) async {
+    public func load() async {
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
         let local = PassthroughSubject<A?, Never>()
         let record = PassthroughSubject<CKRecord.ID, Never>()
+        
+        let prefix = "i"
         let type = "Model"
-        let asset = "archive"
+        let asset = "payload"
+        
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(type + suffix)
+        url.exclude()
+        
+        let config = CKOperation.Configuration()
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 10
+        config.qualityOfService = .userInitiated
         
         save
             .map {
@@ -81,14 +91,14 @@ public final actor Cloud<A> where A : Arch {
                     Task
                         .detached(priority: .userInitiated) {
                             guard
-                                let status = try? await container.base.accountStatus(),
+                                let status = try? await CKContainer.default().accountStatus(),
                                 status == .available,
-                                let user = try? await container.base.userRecordID()
+                                let user = try? await CKContainer.default().userRecordID()
                             else {
                                 promise(.success(nil))
                                 return
                             }
-                            promise(.success(.init(recordName: type + user.recordName)))
+                            promise(.success(.init(recordName: prefix + user.recordName)))
                         }
                 }
             }
@@ -113,12 +123,12 @@ public final actor Cloud<A> where A : Arch {
             .sink { id in
                 Task
                     .detached(priority: .userInitiated) {
-                        let result = await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base -> A? in
+                        let result = await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base -> A? in
                             guard
                                 let record = try? await base.record(for: id),
                                 let asset = record[asset] as? CKAsset,
-                                let url = asset.fileURL,
-                                let data = try? Data(contentsOf: url)
+                                let fileURL = asset.fileURL,
+                                let data = try? Data(contentsOf: fileURL)
                             else {
                                 return nil
                             }
@@ -133,7 +143,7 @@ public final actor Cloud<A> where A : Arch {
             .sink { id in
                 Task
                     .detached(priority: .userInitiated) {
-                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+                        await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
                             let subscription = CKQuerySubscription(
                                 recordType: type,
                                 predicate: .init(format: "recordID = %@", id),
@@ -159,9 +169,9 @@ public final actor Cloud<A> where A : Arch {
             .sink { id in
                 Task
                     .detached(priority: .userInitiated) {
-                        await container.base.publicCloudDatabase.configuredWith(configuration: container.configuration) { base in
+                        await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
                             let record = CKRecord(recordType: type, recordID: id)
-                            record[asset] = CKAsset(fileURL: container.url)
+                            record[asset] = CKAsset(fileURL: url)
                             _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                         }
                     }
@@ -218,7 +228,7 @@ public final actor Cloud<A> where A : Arch {
                             .0
                             .compressed
                         do {
-                            try data.write(to: container.url, options: .atomic)
+                            try data.write(to: url, options: .atomic)
                             if storing.1 {
                                 push.send()
                             }
@@ -240,7 +250,7 @@ public final actor Cloud<A> where A : Arch {
         
         arch = await Task
             .detached(priority: .userInitiated) {
-                guard let data = try? Data(contentsOf: container.url) else { return nil }
+                guard let data = try? Data(contentsOf: url) else { return nil }
                 return await .prototype(data: data)
             }
             .value
@@ -262,3 +272,9 @@ public final actor Cloud<A> where A : Arch {
         save.send(arch)
     }
 }
+
+#if DEBUG
+    private let suffix = ".debug.data"
+#else
+    private let suffix = ".data"
+#endif
