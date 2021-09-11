@@ -11,6 +11,10 @@ public final actor Cloud<A> where A : Arch {
         return cloud
     }
     
+    public static var emphemeral: Self {
+        .init()
+    }
+    
     public var arch = A.new
     nonisolated public let archive = PassthroughSubject<A, Never>()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
@@ -36,6 +40,8 @@ public final actor Cloud<A> where A : Arch {
             }
         }
     }
+    
+    private init() { }
     
     public func load() async {
         let push = PassthroughSubject<Void, Never>()
