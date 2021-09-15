@@ -16,7 +16,7 @@ public final actor Cloud<A> where A : Arch {
     }
     
     public var arch = A.new
-    nonisolated public let archive = PassthroughSubject<A, Never>()
+    nonisolated public let archive = CurrentValueSubject<A, Never>(.new)
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     
     nonisolated let save = PassthroughSubject<A, Never>()    
@@ -261,15 +261,16 @@ public final actor Cloud<A> where A : Arch {
             }
             .store(in: &subs)
         
-        arch = await Task
-            .detached(priority: .userInitiated) {
+        await Task
+            .detached(priority: .userInitiated) { () -> A? in
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return await .prototype(data: data)
             }
             .value
-            ?? .new
-        
-        local.send(arch)
+            .map {
+                arch = $0
+                local.send($0)
+            }
     }
     
     public func stream() async {

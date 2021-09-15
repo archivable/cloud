@@ -32,6 +32,7 @@ final class CloudTests: XCTestCase {
         let date = Date()
         cloud
             .archive
+            .dropFirst()
             .sink {
                 XCTAssertEqual(1, $0.counter)
                 XCTAssertGreaterThanOrEqual($0.timestamp, date.timestamp)
