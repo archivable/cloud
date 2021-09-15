@@ -16,18 +16,22 @@ public final actor Cloud<A> where A : Arch {
     }
     
     public var _archive = A.new
-    nonisolated public let archive = CurrentValueSubject<A, Never>(.new)
-    nonisolated public let pull = PassthroughSubject<Void, Never>()
     
+    nonisolated public var archive: AnyPublisher<A, Never> {
+        publish.eraseToAnyPublisher()
+    }
+    
+    nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()    
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
+    nonisolated private let publish = CurrentValueSubject<A, Never>(.new)
     
     public var notified: Bool {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
-                sub = archive
+                sub = publish
                     .timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
@@ -94,7 +98,7 @@ public final actor Cloud<A> where A : Arch {
                 $0 >= $1
             }
             .receive(on: DispatchQueue.main)
-            .subscribe(archive)
+            .subscribe(publish)
             .store(in: &subs)
         
         pull
@@ -280,7 +284,7 @@ public final actor Cloud<A> where A : Arch {
         
         await MainActor
             .run {
-                archive.send(arch)
+                publish.send(arch)
             }
         
         save.send(arch)
