@@ -3,7 +3,7 @@ import Archivable
 
 extension Cloud where A == Archive {
     func increaseCounter() async {
-        arch.counter += 1
+        _archive.counter += 1
         await stream()
     }
 }

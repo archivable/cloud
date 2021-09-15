@@ -15,7 +15,7 @@ public final actor Cloud<A> where A : Arch {
         .init()
     }
     
-    public var arch = A.new
+    public var _archive = A.new
     nonisolated public let archive = CurrentValueSubject<A, Never>(.new)
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     
@@ -256,8 +256,8 @@ public final actor Cloud<A> where A : Arch {
             }
             .removeDuplicates()
             .sink {
-                guard $0.timestamp > self.arch.timestamp else { return }
-                self.arch = $0
+                guard $0.timestamp > self._archive.timestamp else { return }
+                self._archive = $0
             }
             .store(in: &subs)
         
@@ -268,15 +268,15 @@ public final actor Cloud<A> where A : Arch {
             }
             .value
             .map {
-                arch = $0
+                _archive = $0
                 local.send($0)
             }
     }
     
     public func stream() async {
-        arch.timestamp = .now
+        _archive.timestamp = .now
         
-        let arch = arch
+        let arch = _archive
         
         await MainActor
             .run {
