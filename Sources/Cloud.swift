@@ -280,7 +280,7 @@ public final actor Cloud<A> where A : Arch {
         
         await MainActor
             .run {
-                self.archive.send(arch)
+                archive.send(arch)
             }
         
         save.send(arch)
