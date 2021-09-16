@@ -12,8 +12,8 @@ extension Cloud {
             subscriber = nil
         }
         
-        func request(_ demand: Subscribers.Demand) {
-            
+        func request(_: Subscribers.Demand) {
+
         }
     }
 }

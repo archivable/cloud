@@ -1,10 +1,7 @@
 import CloudKit
 import Combine
 
-public final actor Cloud<A>: Publisher where A : Arch {
-    public typealias Output = A
-    public typealias Failure = Never
-    
+public final actor Cloud<A> where A : Arch {
     public static var new: Self {
         let cloud = Self()
         Task
@@ -14,15 +11,25 @@ public final actor Cloud<A>: Publisher where A : Arch {
         return cloud
     }
     
-    public static var emphemeral: Self {
+    public static var ephemeral: Self {
         .init()
     }
     
-    public var _archive = A.new
-    nonisolated public let archive = CurrentValueSubject<A, Never>(.new)
+    nonisolated public var pub: AnyPublisher<A, Never> {
+        let pub = Pub(cloud: self)
+        
+        Task {
+            await append(pub: pub)
+        }
+        
+        return pub.eraseToAnyPublisher()
+    }
+    
+    public var archive = A.new
+    
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()
-    private(set) var attachments = [Attachment]()
+    private(set) var publishers = [Pub]()
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
@@ -30,7 +37,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
-                sub = archive
+                sub = pub
                     .timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
@@ -96,8 +103,11 @@ public final actor Cloud<A>: Publisher where A : Arch {
             .removeDuplicates {
                 $0 >= $1
             }
-            .receive(on: DispatchQueue.main)
-            .subscribe(archive)
+            .sink { archive in
+                Task {
+                    await self.send(archive: archive)
+                }
+            }
             .store(in: &subs)
         
         pull
@@ -259,8 +269,8 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .removeDuplicates()
             .sink {
-                guard $0.timestamp > self._archive.timestamp else { return }
-                self._archive = $0
+                guard $0.timestamp > self.archive.timestamp else { return }
+                self.archive = $0
             }
             .store(in: &subs)
         
@@ -271,46 +281,43 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .value
             .map {
-                _archive = $0
+                archive = $0
                 local.send($0)
             }
     }
     
     public func stream() async {
-        _archive.timestamp = .now
+        archive.timestamp = .now
         
-        let arch = _archive
-        
-        await MainActor
-            .run {
-                archive.send(arch)
-            }
-        
-        save.send(arch)
-        
-        attachments = attachments
+        publishers = publishers
             .filter {
                 $0.sub?.subscriber != nil
             }
         
-        attachments
-            .forEach {
-                _ = $0
-                    .sub!.subscriber!.receive(_archive)
-            }
+        await send(archive: archive)
+        
+        save.send(archive)
     }
     
-    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, S.Failure == Never, S.Input == A {
-        let sub = Sub(subscriber: .init(subscriber))
-        subscriber.receive(subscription: sub)
-        Task {
-            await attach(sub: sub)
+    func deploy(sub: Sub?) async {
+        await deploy(archive: archive, sub: sub)
+    }
+    
+    private func append(pub: Pub) {
+        publishers.append(pub)
+    }
+    
+    private func send(archive: A) async {
+        for pub in publishers {
+            await deploy(archive: archive, sub: pub.sub)
         }
     }
     
-    private func attach(sub: Sub) {
-        attachments.append(.init(sub: sub))
-        _ = sub.subscriber?.receive(_archive)
+    private func deploy(archive: A, sub: Sub?) async {
+        await MainActor
+            .run {
+                _ = sub?.subscriber?.receive(archive)
+            }
     }
 }
 
