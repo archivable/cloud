@@ -32,7 +32,7 @@ final class CloudTests: XCTestCase {
         let expect = expectation(description: "")
 
         cloud
-            .pub
+            .archive
             .sink { _ in
                 XCTAssertEqual(Thread.main, Thread.current)
                 expect.fulfill()
@@ -47,7 +47,7 @@ final class CloudTests: XCTestCase {
         let date = Date()
         
         cloud
-            .pub
+            .archive
             .dropFirst()
             .sink {
                 XCTAssertEqual(Thread.main, Thread.current)
@@ -66,14 +66,14 @@ final class CloudTests: XCTestCase {
         let expect = expectation(description: "")
         
         _ = cloud
-            .pub
+            .archive
             .dropFirst()
             .sink { _ in
                 XCTFail()
             }
         
         cloud
-            .pub
+            .archive
             .first()
             .sink {
                 XCTAssertEqual(0, $0.counter)
@@ -85,7 +85,7 @@ final class CloudTests: XCTestCase {
         
         var sub1: AnyCancellable?
         sub1 = cloud
-            .pub
+            .archive
             .dropFirst()
             .sink {
                 XCTAssertEqual(1, $0.counter)
@@ -97,7 +97,7 @@ final class CloudTests: XCTestCase {
         
         var sub2: AnyCancellable?
         sub2 = cloud
-            .pub
+            .archive
             .dropFirst(2)
             .sink {
                 XCTAssertEqual(2, $0.counter)

@@ -15,7 +15,7 @@ public final actor Cloud<A> where A : Arch {
         .init()
     }
     
-    nonisolated public var pub: AnyPublisher<A, Never> {
+    nonisolated public var archive: AnyPublisher<A, Never> {
         let pub = Pub(cloud: self)
         
         Task {
@@ -25,7 +25,7 @@ public final actor Cloud<A> where A : Arch {
         return pub.eraseToAnyPublisher()
     }
     
-    public var archive = A.new
+    public var model = A.new
     
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()
@@ -37,7 +37,7 @@ public final actor Cloud<A> where A : Arch {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
-                sub = pub
+                sub = archive
                     .timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
@@ -269,8 +269,8 @@ public final actor Cloud<A> where A : Arch {
             }
             .removeDuplicates()
             .sink {
-                guard $0.timestamp > self.archive.timestamp else { return }
-                self.archive = $0
+                guard $0.timestamp > self.model.timestamp else { return }
+                self.model = $0
             }
             .store(in: &subs)
         
@@ -281,26 +281,26 @@ public final actor Cloud<A> where A : Arch {
             }
             .value
             .map {
-                archive = $0
+                model = $0
                 local.send($0)
             }
     }
     
     public func stream() async {
-        archive.timestamp = .now
+        model.timestamp = .now
         
         publishers = publishers
             .filter {
                 $0.sub?.subscriber != nil
             }
         
-        await send(archive: archive)
+        await send(archive: model)
         
-        save.send(archive)
+        save.send(model)
     }
     
     func deploy(sub: Sub?) async {
-        await deploy(archive: archive, sub: sub)
+        await deploy(archive: model, sub: sub)
     }
     
     private func append(pub: Pub) {
