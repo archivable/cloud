@@ -4,10 +4,9 @@ import Combine
 public final actor Cloud<A> where A : Arch {
     public static var new: Self {
         let cloud = Self()
-        Task
-            .detached(priority: .userInitiated) {
-                await cloud.load()
-            }
+        Task {
+            await cloud.load()
+        }
         return cloud
     }
     
@@ -18,10 +17,9 @@ public final actor Cloud<A> where A : Arch {
     nonisolated public var archive: AnyPublisher<A, Never> {
         let pub = Pub(cloud: self)
         
-        Task
-            .detached(priority: .userInitiated) {
-                await self.append(pub: pub)
-            }
+        Task {
+            await append(pub: pub)
+        }
         
         return pub.eraseToAnyPublisher()
     }
@@ -105,10 +103,9 @@ public final actor Cloud<A> where A : Arch {
                 $0 >= $1
             }
             .sink { model in
-                Task
-                    .detached(priority: .userInitiated) {
-                        await self.send(model: model)
-                    }
+                Task {
+                    await self.send(model: model)
+                }
             }
             .store(in: &subs)
         
@@ -116,18 +113,17 @@ public final actor Cloud<A> where A : Arch {
             .merge(with: push)
             .flatMap { _ in
                 Future { promise in
-                    Task
-                        .detached(priority: .userInitiated) {
-                            guard
-                                let status = try? await CKContainer.default().accountStatus(),
-                                status == .available,
-                                let user = try? await CKContainer.default().userRecordID()
-                            else {
-                                promise(.success(nil))
-                                return
-                            }
-                            promise(.success(.init(recordName: prefix + user.recordName)))
+                    Task {
+                        guard
+                            let status = try? await CKContainer.default().accountStatus(),
+                            status == .available,
+                            let user = try? await CKContainer.default().userRecordID()
+                        else {
+                            promise(.success(nil))
+                            return
                         }
+                        promise(.success(.init(recordName: prefix + user.recordName)))
+                    }
                 }
             }
             .compactMap {
@@ -149,43 +145,41 @@ public final actor Cloud<A> where A : Arch {
                 $0.0
             }
             .sink { id in
-                Task
-                    .detached(priority: .userInitiated) {
-                        let result = await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base -> A? in
-                            guard
-                                let record = try? await base.record(for: id),
-                                let asset = record[asset] as? CKAsset,
-                                let fileURL = asset.fileURL,
-                                let data = try? Data(contentsOf: fileURL)
-                            else {
-                                return nil
-                            }
-                            return await .prototype(data: data)
+                Task {
+                    let result = await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base -> A? in
+                        guard
+                            let record = try? await base.record(for: id),
+                            let asset = record[asset] as? CKAsset,
+                            let fileURL = asset.fileURL,
+                            let data = try? Data(contentsOf: fileURL)
+                        else {
+                            return nil
                         }
-                        remote.send(result)
+                        return await .prototype(data: data)
                     }
+                    remote.send(result)
+                }
             }
             .store(in: &subs)
         
         record
             .sink { id in
-                Task
-                    .detached(priority: .userInitiated) {
-                        await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
-                            let subscription = CKQuerySubscription(
-                                recordType: type,
-                                predicate: .init(format: "recordID = %@", id),
-                                options: [.firesOnRecordUpdate])
-                            subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                            
-                            let old = try? await base.allSubscriptions()
+                Task {
+                    await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                        
+                        let old = try? await base.allSubscriptions()
 
-                            _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                    deleting: old?
-                                                                        .map(\.subscriptionID)
-                                                                    ?? [])
-                        }
+                        _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                deleting: old?
+                                                                    .map(\.subscriptionID)
+                                                                ?? [])
                     }
+                }
             }
             .store(in: &subs)
         
@@ -195,14 +189,13 @@ public final actor Cloud<A> where A : Arch {
                 id
             }
             .sink { id in
-                Task
-                    .detached(priority: .userInitiated) {
-                        await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
-                            let record = CKRecord(recordType: type, recordID: id)
-                            record[asset] = CKAsset(fileURL: url)
-                            _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
-                        }
+                Task {
+                    await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
+                        let record = CKRecord(recordType: type, recordID: id)
+                        record[asset] = CKAsset(fileURL: url)
+                        _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                     }
+                }
             }
             .store(in: &subs)
         
@@ -301,8 +294,10 @@ public final actor Cloud<A> where A : Arch {
         save.send(model)
     }
     
-    func deploy(sub: Sub?) async {
-        await deploy(model: model, sub: sub)
+    nonisolated func deploy(sub: Sub?) {
+        Task {
+            await deploy(model: model, sub: sub)
+        }
     }
     
     private func append(pub: Pub) {
@@ -315,11 +310,8 @@ public final actor Cloud<A> where A : Arch {
         }
     }
     
-    private func deploy(model: A, sub: Sub?) async {
-        await MainActor
-            .run {
-                _ = sub?.subscriber?.receive(model)
-            }
+    @MainActor private func deploy(model: A, sub: Sub?) async {
+        _ = sub?.subscriber?.receive(model)
     }
 }
 

@@ -62,26 +62,6 @@ final class CloudTests: XCTestCase {
         await waitForExpectations(timeout: 1)
     }
     
-    func testStreamMultiple() async {
-        let expect = expectation(description: "")
-        
-        await self.cloud.increaseCounter()
-        
-        cloud
-            .archive
-            .dropFirst()
-            .sink {
-                XCTAssertEqual(2, $0.counter)
-                expect.fulfill()
-            }
-            .store(in: &subs)
-        
-        
-        await self.cloud.increaseCounter()
-        
-        await waitForExpectations(timeout: 1)
-    }
-    
     func testSubscription() {
         let expect = expectation(description: "")
         

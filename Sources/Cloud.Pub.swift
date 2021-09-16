@@ -13,16 +13,10 @@ extension Cloud {
         }
         
         func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
-            let sub = Sub(pub: self, subscriber: .init(subscriber))
-            self.sub = sub
+            let sub = Sub(subscriber: .init(subscriber))
             subscriber.receive(subscription: sub)
-        }
-        
-        func deploy() {
-            Task
-                .detached(priority: .userInitiated) {
-                    await self.cloud?.deploy(sub: self.sub)
-                }
+            cloud?.deploy(sub: sub)
+            self.sub = sub
         }
     }
 }
