@@ -104,10 +104,10 @@ public final actor Cloud<A> where A : Arch {
             .removeDuplicates {
                 $0 >= $1
             }
-            .sink { archive in
+            .sink { model in
                 Task
                     .detached(priority: .userInitiated) {
-                        await self.send(archive: archive)
+                        await self.send(model: model)
                     }
             }
             .store(in: &subs)
@@ -296,29 +296,29 @@ public final actor Cloud<A> where A : Arch {
                 $0.sub?.subscriber != nil
             }
         
-        await send(archive: model)
+        await send(model: model)
         
         save.send(model)
     }
     
     func deploy(sub: Sub?) async {
-        await deploy(archive: model, sub: sub)
+        await deploy(model: model, sub: sub)
     }
     
     private func append(pub: Pub) {
         publishers.append(pub)
     }
     
-    private func send(archive: A) async {
+    private func send(model: A) async {
         for pub in publishers {
-            await deploy(archive: archive, sub: pub.sub)
+            await deploy(model: model, sub: pub.sub)
         }
     }
     
-    private func deploy(archive: A, sub: Sub?) async {
+    private func deploy(model: A, sub: Sub?) async {
         await MainActor
             .run {
-                _ = sub?.subscriber?.receive(archive)
+                _ = sub?.subscriber?.receive(model)
             }
     }
 }
