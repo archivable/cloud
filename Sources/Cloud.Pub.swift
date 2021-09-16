@@ -6,21 +6,23 @@ extension Cloud {
         typealias Failure = Never
         
         private(set) weak var sub: Sub?
-        private weak var cloud: Cloud!
+        private weak var cloud: Cloud?
         
         init(cloud: Cloud) {
             self.cloud = cloud
         }
         
         func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
-            let sub = Sub(subscriber: .init(subscriber))
-            subscriber.receive(subscription: sub)
+            let sub = Sub(pub: self, subscriber: .init(subscriber))
             self.sub = sub
-            
-            Task {
-                await cloud.deploy(sub: sub)
-                cloud = nil
-            }
+            subscriber.receive(subscription: sub)
+        }
+        
+        func deploy() {
+            Task
+                .detached(priority: .userInitiated) {
+                    await self.cloud?.deploy(sub: self.sub)
+                }
         }
     }
 }

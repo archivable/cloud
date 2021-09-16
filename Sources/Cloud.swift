@@ -18,9 +18,10 @@ public final actor Cloud<A> where A : Arch {
     nonisolated public var archive: AnyPublisher<A, Never> {
         let pub = Pub(cloud: self)
         
-        Task {
-            await append(pub: pub)
-        }
+        Task
+            .detached(priority: .userInitiated) {
+                await self.append(pub: pub)
+            }
         
         return pub.eraseToAnyPublisher()
     }
@@ -104,9 +105,10 @@ public final actor Cloud<A> where A : Arch {
                 $0 >= $1
             }
             .sink { archive in
-                Task {
-                    await self.send(archive: archive)
-                }
+                Task
+                    .detached(priority: .userInitiated) {
+                        await self.send(archive: archive)
+                    }
             }
             .store(in: &subs)
         

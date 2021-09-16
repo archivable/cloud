@@ -59,7 +59,9 @@ final class CloudTests: XCTestCase {
         
         await self.cloud.increaseCounter()
         
-        await waitForExpectations(timeout: 1)
+        await waitForExpectations(timeout: 1) { _ in
+            print("timeout")
+        }
     }
     
     func testSubscription() {
