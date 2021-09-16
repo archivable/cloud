@@ -1,7 +1,10 @@
 import CloudKit
 import Combine
 
-public final actor Cloud<A> where A : Arch {
+public final actor Cloud<A>: Publisher where A : Arch {
+    public typealias Output = A
+    public typealias Failure = Never
+    
     public static var new: Self {
         let cloud = Self()
         Task
@@ -18,7 +21,8 @@ public final actor Cloud<A> where A : Arch {
     public var _archive = A.new
     nonisolated public let archive = CurrentValueSubject<A, Never>(.new)
     nonisolated public let pull = PassthroughSubject<Void, Never>()
-    nonisolated let save = PassthroughSubject<A, Never>()    
+    nonisolated let save = PassthroughSubject<A, Never>()
+    private(set) var attachments = [Attachment]()
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
@@ -283,6 +287,30 @@ public final actor Cloud<A> where A : Arch {
             }
         
         save.send(arch)
+        
+        attachments = attachments
+            .filter {
+                $0.sub?.subscriber != nil
+            }
+        
+        attachments
+            .forEach {
+                _ = $0
+                    .sub!.subscriber!.receive(_archive)
+            }
+    }
+    
+    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, S.Failure == Never, S.Input == A {
+        let sub = Sub(subscriber: .init(subscriber))
+        subscriber.receive(subscription: sub)
+        Task {
+            await attach(sub: sub)
+        }
+    }
+    
+    private func attach(sub: Sub) {
+        attachments.append(.init(sub: sub))
+        _ = sub.subscriber?.receive(_archive)
     }
 }
 
