@@ -262,16 +262,17 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .store(in: &subs)
         
-        await Task
+        if let stored = (await Task
             .detached(priority: .userInitiated) { () -> A? in
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return await .prototype(data: data)
             }
-            .value
-            .map {
-                model = $0
-                local.send($0)
-            }
+            .value) {
+            model = stored
+            local.send(stored)
+        } else {
+            local.send(model)
+        }
     }
     
     public func stream() async {
