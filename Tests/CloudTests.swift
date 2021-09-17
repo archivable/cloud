@@ -11,7 +11,7 @@ final class CloudTests: XCTestCase {
         subs = []
     }
     
-    func testPersist() async {
+    func testPersist() {
         let expect = expectation(description: "")
         let date = Date()
         
@@ -24,15 +24,17 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.increaseCounter()
-        await waitForExpectations(timeout: 1)
+        Task {
+            await cloud.increaseCounter()
+        }
+        
+        waitForExpectations(timeout: 1)
     }
     
     func testSubscribe() {
         let expect = expectation(description: "")
 
         cloud
-            .archive
             .sink { _ in
                 XCTAssertEqual(Thread.main, Thread.current)
                 expect.fulfill()
@@ -42,12 +44,11 @@ final class CloudTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testStream() async {
+    func testStream() {
         let expect = expectation(description: "")
         let date = Date()
         
         cloud
-            .archive
             .dropFirst()
             .sink {
                 XCTAssertEqual(Thread.main, Thread.current)
@@ -57,23 +58,23 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await self.cloud.increaseCounter()
+        Task {
+            await self.cloud.increaseCounter()
+        }
         
-        await waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 1)
     }
     
     func testSubscription() {
         let expect = expectation(description: "")
         
         _ = cloud
-            .archive
             .dropFirst()
             .sink { _ in
                 XCTFail()
             }
         
         cloud
-            .archive
             .first()
             .sink {
                 XCTAssertEqual(0, $0.counter)
@@ -85,7 +86,6 @@ final class CloudTests: XCTestCase {
         
         var sub1: AnyCancellable?
         sub1 = cloud
-            .archive
             .dropFirst()
             .sink {
                 XCTAssertEqual(1, $0.counter)
@@ -97,7 +97,6 @@ final class CloudTests: XCTestCase {
         
         var sub2: AnyCancellable?
         sub2 = cloud
-            .archive
             .dropFirst(2)
             .sink {
                 XCTAssertEqual(2, $0.counter)
@@ -105,7 +104,7 @@ final class CloudTests: XCTestCase {
                 XCTAssertNil(sub2)
                 Task {
                     await self.cloud.increaseCounter()
-                    let count = await self.cloud.publishers.count
+                    let count = await self.cloud.contracts.count
                     XCTAssertEqual(0, count)
                     expect.fulfill()
                 }

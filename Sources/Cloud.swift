@@ -1,7 +1,10 @@
 import CloudKit
 import Combine
 
-public final actor Cloud<A> where A : Arch {
+public final actor Cloud<A>: Publisher where A : Arch {
+    public typealias Output = A
+    public typealias Failure = Never
+    
     public static var new: Self {
         let cloud = Self()
         Task {
@@ -14,21 +17,11 @@ public final actor Cloud<A> where A : Arch {
         .init()
     }
     
-    nonisolated public var archive: Pub {
-        let pub = Pub(cloud: self)
-        
-        Task {
-            await append(pub: pub)
-        }
-        
-        return pub
-    }
-    
     public var model = A.new
     
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()
-    private(set) var publishers = [Pub]()
+    private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
@@ -36,8 +29,7 @@ public final actor Cloud<A> where A : Arch {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
-                sub = archive
-                    .timeout(.seconds(9), scheduler: queue)
+                sub = timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
                         continuation.resume(returning: false)
@@ -53,6 +45,7 @@ public final actor Cloud<A> where A : Arch {
     private init() { }
     
     public func load() async {
+        
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
@@ -284,34 +277,43 @@ public final actor Cloud<A> where A : Arch {
     public func stream() async {
         model.timestamp = .now
         
-        publishers = publishers
+        contracts = contracts
             .filter {
                 $0.sub?.subscriber != nil
             }
         
         await send(model: model)
-        
+
         save.send(model)
     }
     
-    nonisolated func deploy(sub: Sub?) {
+    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
+        let sub = Sub(subscriber: .init(subscriber))
+        subscriber.receive(subscription: sub)
+        
         Task {
-            await deploy(model: model, sub: sub)
+            await store(contract: .init(sub: sub))
         }
     }
     
-    private func append(pub: Pub) {
-        publishers.append(pub)
+    private func store(contract: Contract) async {
+        contracts.append(contract)
+        let initial = model
+        await MainActor
+            .run {
+                _ = contract.sub?.subscriber?.receive(initial)
+            }
     }
     
     private func send(model: A) async {
-        for pub in publishers {
-            await deploy(model: model, sub: pub.sub)
-        }
-    }
-    
-    @MainActor private func deploy(model: A, sub: Sub?) async {
-        _ = sub?.subscriber?.receive(model)
+        let subscribers = contracts.compactMap(\.sub?.subscriber)
+        await MainActor
+            .run {
+                subscribers
+                    .forEach {
+                        _ = $0.receive(model)
+                    }
+            }
     }
 }
 
