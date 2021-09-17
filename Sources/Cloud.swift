@@ -18,7 +18,6 @@ public final actor Cloud<A>: Publisher where A : Arch {
     }
     
     public var model = A.new
-    
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()
     private(set) var contracts = [Contract]()
@@ -45,7 +44,6 @@ public final actor Cloud<A>: Publisher where A : Arch {
     private init() { }
     
     public func load() async {
-        
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
