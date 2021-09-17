@@ -1,9 +1,9 @@
 import Combine
 
 extension Cloud {
-    final class Pub: Publisher {
-        typealias Output = A
-        typealias Failure = Never
+    public final class Pub: Publisher {
+        public typealias Output = A
+        public typealias Failure = Never
         
         private(set) weak var sub: Sub?
         private weak var cloud: Cloud?
@@ -12,7 +12,7 @@ extension Cloud {
             self.cloud = cloud
         }
         
-        func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
+        public func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
             let sub = Sub(subscriber: .init(subscriber))
             subscriber.receive(subscription: sub)
             cloud?.deploy(sub: sub)

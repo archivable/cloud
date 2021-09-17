@@ -14,14 +14,14 @@ public final actor Cloud<A> where A : Arch {
         .init()
     }
     
-    nonisolated public var archive: AnyPublisher<A, Never> {
+    nonisolated public var archive: Pub {
         let pub = Pub(cloud: self)
         
         Task {
             await append(pub: pub)
         }
         
-        return pub.eraseToAnyPublisher()
+        return pub
     }
     
     public var model = A.new
