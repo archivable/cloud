@@ -5,10 +5,10 @@ public final actor Cloud<A>: Publisher where A : Arch {
     public typealias Output = A
     public typealias Failure = Never
     
-    public static var new: Self {
+    public static func new(identifier: String) -> Self {
         let cloud = Self()
         Task {
-            await cloud.load()
+            await cloud.load(identifier)
         }
         return cloud
     }
@@ -43,12 +43,15 @@ public final actor Cloud<A>: Publisher where A : Arch {
     
     private init() { }
     
-    public func load() async {
+    private func load(_ identifier: String) async {
         let push = PassthroughSubject<Void, Never>()
         let store = PassthroughSubject<(A, Bool), Never>()
         let remote = PassthroughSubject<A?, Never>()
         let local = PassthroughSubject<A?, Never>()
         let record = PassthroughSubject<CKRecord.ID, Never>()
+        
+        let container = CKContainer(identifier: identifier)
+        let database = container.publicCloudDatabase
         
         let prefix = "i"
         let type = "Model"
@@ -106,16 +109,10 @@ public final actor Cloud<A>: Publisher where A : Arch {
                 Future { promise in
                     Task {
                         guard
-                            let status = try? await CKContainer.default().accountStatus(),
+                            let status = try? await container.accountStatus(),
                             status == .available,
-                            let user = try? await CKContainer.default().userRecordID()
+                            let user = try? await container.userRecordID()
                         else {
-                            do {
-                                try await CKContainer.default().userRecordID()
-                            } catch let error {
-                                Swift.print("error \(error)")
-                            }
-                            
                             promise(.success(nil))
                             return
                         }
@@ -143,7 +140,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .sink { id in
                 Task {
-                    let result = await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base -> A? in
+                    let result = await database.configuredWith(configuration: config) { base -> A? in
                         guard
                             let record = try? await base.record(for: id),
                             let asset = record[asset] as? CKAsset,
@@ -162,7 +159,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         record
             .sink { id in
                 Task {
-                    await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
+                    await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
                             recordType: type,
                             predicate: .init(format: "recordID = %@", id),
@@ -187,7 +184,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .sink { id in
                 Task {
-                    await CKContainer.default().publicCloudDatabase.configuredWith(configuration: config) { base in
+                    await database.configuredWith(configuration: config) { base in
                         let record = CKRecord(recordType: type, recordID: id)
                         record[asset] = CKAsset(fileURL: url)
                         _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
