@@ -229,9 +229,6 @@ public final actor Cloud<A>: Publisher where A : Arch {
             .store(in: &subs)
         
         store
-            .removeDuplicates {
-                $0.0 > $1.0
-            }
             .debounce(for: .milliseconds(500), scheduler: queue)
             .sink { storing in
                 Task
