@@ -110,6 +110,12 @@ public final actor Cloud<A>: Publisher where A : Arch {
                             status == .available,
                             let user = try? await CKContainer.default().userRecordID()
                         else {
+                            do {
+                                try await CKContainer.default().userRecordID()
+                            } catch let error {
+                                Swift.print("error \(error)")
+                            }
+                            
                             promise(.success(nil))
                             return
                         }
