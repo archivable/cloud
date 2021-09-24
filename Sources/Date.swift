@@ -10,7 +10,7 @@ extension Date {
     }
     
     public var data: Data {
-        Data()
+        .init()
             .adding(self)
     }
 }

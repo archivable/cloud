@@ -35,7 +35,7 @@ final class DataTests: XCTestCase {
             let number: Int
             
             var data: Data {
-                Data()
+                .init()
                     .adding(UInt16(number))
             }
             
