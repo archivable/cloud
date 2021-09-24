@@ -31,7 +31,7 @@ final class DataTests: XCTestCase {
     }
     
     func testPrototype() {
-        struct A: Storable {
+        struct A: Storable, Equatable {
             let number: Int
             
             var data: Data {
