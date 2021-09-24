@@ -94,7 +94,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
                                 $0.0
                             })
             .removeDuplicates {
-                $0 >= $1
+                $0.timestamp >= $1.timestamp
             }
             .sink { model in
                 Task {
@@ -202,9 +202,11 @@ public final actor Cloud<A>: Publisher where A : Arch {
                             .compactMap {
                                 $0
                             }
-                            .removeDuplicates())
+                            .removeDuplicates {
+                                $0.timestamp <= $1.timestamp
+                            })
             .filter {
-                $0.0 == nil ? true : $0.0! < $0.1
+                $0.0 == nil ? true : $0.0!.timestamp < $0.1.timestamp
             }
             .map {
                 ($1, false)
@@ -214,7 +216,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         
         remote
             .map {
-                ($0, .init())
+                ($0, .now)
             }
             .combineLatest(local
                             .compactMap {
@@ -225,7 +227,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
                 $0.0.1 == $1.0.1
             }
             .filter { (item: ((A?, Date),  A)) -> Bool in
-                item.0.0 == nil ? true : item.0.0! < item.1
+                item.0.0 == nil ? true : item.0.0!.timestamp < item.1.timestamp
             }
             .map { _ in }
             .subscribe(push)
@@ -253,7 +255,9 @@ public final actor Cloud<A>: Publisher where A : Arch {
             .compactMap {
                 $0
             }
-            .removeDuplicates()
+            .removeDuplicates {
+                $0.timestamp <= $1.timestamp
+            }
             .sink {
                 guard $0.timestamp > self.model.timestamp else { return }
                 self.model = $0

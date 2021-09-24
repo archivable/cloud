@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol Arch: Comparable {
+public protocol Arch {
     static var new: Self { get }
     static var version: UInt8 { get }
     
@@ -11,6 +11,10 @@ public protocol Arch: Comparable {
 }
 
 extension Arch {
+    public static var version: UInt8 {
+        .init()
+    }
+    
     var compressed: Data {
         get async {
             await
@@ -27,9 +31,5 @@ extension Arch {
             .decompressed
         
         return await .init(version: data.removeFirst(), timestamp: data.uInt32(), data: data)
-    }
-    
-    public static func < (lhs: Self, rhs: Self) -> Bool {
-        lhs.timestamp < rhs.timestamp
     }
 }
