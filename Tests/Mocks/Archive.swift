@@ -3,7 +3,6 @@ import Archivable
 
 struct Archive: Arch {
     static var version = UInt8(128)
-    static let new = Self()
     
     var counter: Int
     var timestamp: UInt32
@@ -21,7 +20,7 @@ struct Archive: Arch {
         counter = .init(data.removeFirst())
     }
     
-    private init() {
+    init() {
         timestamp = 0
         counter = 0
     }

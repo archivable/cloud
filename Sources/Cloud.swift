@@ -17,7 +17,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         .init()
     }
     
-    public var model = A.new
+    public var model = A()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
     nonisolated let save = PassthroughSubject<A, Never>()
     private(set) var contracts = [Contract]()

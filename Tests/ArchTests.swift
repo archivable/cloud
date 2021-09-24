@@ -5,7 +5,7 @@ final class ArchTests: XCTestCase {
     private var archive: Archive!
     
     override func setUp() {
-        archive = .new
+        archive = .init()
     }
     
     func testCompress() async {
