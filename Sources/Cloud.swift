@@ -290,7 +290,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         save.send(model)
     }
     
-    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, A == S.Input {
+    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
         let sub = Sub(subscriber: .init(subscriber))
         subscriber.receive(subscription: sub)
         
