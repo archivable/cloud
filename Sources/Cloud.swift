@@ -308,7 +308,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
     }
     
-    private func send(model: A) async {
+    private func send(model: Output) async {
         let subscribers = contracts.compactMap(\.sub?.subscriber)
         await MainActor
             .run {
