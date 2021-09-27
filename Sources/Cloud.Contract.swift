@@ -1,7 +1,7 @@
 import Foundation
 
 extension Cloud {
-    final class Contract {
+    struct Contract {
         private(set) weak var sub: Sub?
         
         init(sub: Sub) {
