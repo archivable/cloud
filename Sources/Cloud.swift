@@ -167,10 +167,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         
                         let old = try? await base.allSubscriptions()
 
-                        _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                deleting: old?
-                                                                    .map(\.subscriptionID)
-                                                                ?? [])
+                        _ = try? await base.modifySubscriptions(saving: [subscription], deleting: [])
                     }
                 }
             }
