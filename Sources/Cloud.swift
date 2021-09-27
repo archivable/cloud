@@ -17,8 +17,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     }
     
     public var model = Output()
-    nonisolated public let pull = PassthroughSubject<Void, Never>()
-    nonisolated let save = PassthroughSubject<Output, Never>()
+    nonisolated public let pull = PassthroughSubject<Void, Failure>()
+    nonisolated let save = PassthroughSubject<Output, Failure>()
     private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
@@ -43,11 +43,11 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     private init() { }
     
     private func load(_ identifier: String) async {
-        let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<(Output, Bool), Never>()
-        let remote = PassthroughSubject<Output?, Never>()
-        let local = PassthroughSubject<Output?, Never>()
-        let record = PassthroughSubject<CKRecord.ID, Never>()
+        let push = PassthroughSubject<Void, Failure>()
+        let store = PassthroughSubject<(Output, Bool), Failure>()
+        let remote = PassthroughSubject<Output?, Failure>()
+        let local = PassthroughSubject<Output?, Failure>()
+        let record = PassthroughSubject<CKRecord.ID, Failure>()
         
         let container = CKContainer(identifier: identifier)
         let database = container.publicCloudDatabase
