@@ -2,9 +2,9 @@ import Combine
 
 extension Cloud {
     final class Sub: Subscription {
-        private(set) var subscriber: AnySubscriber<A, Never>?
+        private(set) var subscriber: AnySubscriber<Output, Never>?
         
-        init(subscriber: AnySubscriber<A, Never>) {
+        init(subscriber: AnySubscriber<Output, Never>) {
             self.subscriber = subscriber
         }
         
