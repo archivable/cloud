@@ -1,8 +1,7 @@
 import CloudKit
 import Combine
 
-public final actor Cloud<A>: Publisher where A : Arch {
-    public typealias Output = A
+public final actor Cloud<Output>: Publisher where Output : Arch {
     public typealias Failure = Never
     
     public static func new(identifier: String) -> Self {
@@ -17,9 +16,9 @@ public final actor Cloud<A>: Publisher where A : Arch {
         .init()
     }
     
-    public var model = A()
+    public var model = Output()
     nonisolated public let pull = PassthroughSubject<Void, Never>()
-    nonisolated let save = PassthroughSubject<A, Never>()
+    nonisolated let save = PassthroughSubject<Output, Never>()
     private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
@@ -45,9 +44,9 @@ public final actor Cloud<A>: Publisher where A : Arch {
     
     private func load(_ identifier: String) async {
         let push = PassthroughSubject<Void, Never>()
-        let store = PassthroughSubject<(A, Bool), Never>()
-        let remote = PassthroughSubject<A?, Never>()
-        let local = PassthroughSubject<A?, Never>()
+        let store = PassthroughSubject<(Output, Bool), Never>()
+        let remote = PassthroughSubject<Output?, Never>()
+        let local = PassthroughSubject<Output?, Never>()
         let record = PassthroughSubject<CKRecord.ID, Never>()
         
         let container = CKContainer(identifier: identifier)
@@ -84,7 +83,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
                                 ($0, $0.timestamp)
                             }
                             .merge(with: save
-                                            .map { _ -> (A?, UInt32) in
+                                            .map { _ -> (Output?, UInt32) in
                                                 (nil, .now)
                                             })
                             .removeDuplicates {
@@ -140,7 +139,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             }
             .sink { id in
                 Task {
-                    let result = await database.configuredWith(configuration: config) { base -> A? in
+                    let result = await database.configuredWith(configuration: config) { base -> Output? in
                         guard
                             let record = try? await base.record(for: id),
                             let asset = record[asset] as? CKAsset,
@@ -196,7 +195,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
         local
             .merge(with: save
                             .map {
-                                $0 as A?
+                                $0 as Output?
                             })
             .combineLatest(remote
                             .compactMap {
@@ -226,7 +225,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             .removeDuplicates {
                 $0.0.1 == $1.0.1
             }
-            .filter { (item: ((A?, Date),  A)) -> Bool in
+            .filter { (item: ((Output?, Date),  Output)) -> Bool in
                 item.0.0 == nil ? true : item.0.0!.timestamp < item.1.timestamp
             }
             .map { _ in }
@@ -265,7 +264,7 @@ public final actor Cloud<A>: Publisher where A : Arch {
             .store(in: &subs)
         
         if let stored = (await Task
-            .detached(priority: .userInitiated) { () -> A? in
+            .detached(priority: .userInitiated) { () -> Output? in
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return await .prototype(data: data)
             }
