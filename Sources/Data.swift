@@ -34,56 +34,60 @@ extension Data {
         prototype()
     }
     
+    public mutating func storable<S>() -> S where S : Storable {
+        .init(data: &self)
+    }
+    
     public func mutating<M>(transform: (inout Self) -> M) -> M {
         var mutating = self
         return transform(&mutating)
     }
     
-    public mutating func unwrap() -> Data {
-        let size = Int(uInt16())
+    public mutating func sequence<I, S>(_ size: I.Type) -> [S] where I : UnsignedInteger, S : Storable {
+        (0 ..< .init(number() as I))
+            .map { _ in
+                .init(data: &self)
+            }
+    }
+    
+    public mutating func unwrap<I>(_ size: I.Type) -> Data where I : UnsignedInteger {
+        let size = Int(number() as I)
         let result = subdata(in: 0 ..< size)
         self = removing(size)
         return result
     }
     
-    public mutating func string() -> String {
-        .init(decoding: unwrap(), as: UTF8.self)
+    public mutating func string<I>(_ size: I.Type) -> String where I : UnsignedInteger {
+        .init(decoding: unwrap(size), as: UTF8.self)
     }
     
     public mutating func date() -> Date {
-        .init(timestamp: uInt32())
+        .init(timestamp: number() as UInt32)
     }
     
     public mutating func uuid() -> UUID {
-        UUID(uuidString: string())!
+        UUID(uuidString: string(UInt8.self))!
     }
     
     public mutating func bool() -> Bool {
         removeFirst() == 1
     }
     
-    public mutating func uInt16() -> UInt16 {
+    public mutating func number<I>() -> I where I : UnsignedInteger {
         let result = withUnsafeBytes {
-            $0.baseAddress!.bindMemory(to: UInt16.self, capacity: 1)[0]
+            $0.baseAddress!.bindMemory(to: I.self, capacity: 1)[0]
         }
-        self = removing(2)
+        self = removing(MemoryLayout<I>.size)
         return result
     }
     
-    public mutating func uInt32() -> UInt32 {
-        let result = withUnsafeBytes {
-            $0.baseAddress!.bindMemory(to: UInt32.self, capacity: 1)[0]
-        }
-        self = removing(4)
-        return result
+    public func adding<P>(_ storable: P) -> Self where P : Storable {
+        self + storable.data
     }
     
-    public mutating func uInt64() -> UInt64 {
-        let result = withUnsafeBytes {
-            $0.baseAddress!.bindMemory(to: UInt64.self, capacity: 1)[0]
-        }
-        self = removing(8)
-        return result
+    public func adding<I, S>(_ size: I.Type, collection: [S]) -> Self where I : UnsignedInteger, S : Storable {
+        adding(I(collection.count))
+            .adding(collection.flatMap(\.data))
     }
     
     public func adding(_ data: Self) -> Self {
@@ -94,12 +98,12 @@ extension Data {
         self + collection
     }
     
-    public func wrapping(_ data: Data) -> Self {
-        adding(UInt16(data.count)) + data
+    public func wrapping<I>(_ size: I.Type, data: Data) -> Self where I : UnsignedInteger {
+        adding(I(data.count)) + data
     }
     
-    public func adding(_ string: String) -> Self {
-        wrapping(.init(string.utf8))
+    public func adding<I>(_ size: I.Type, string: String) -> Self where I : UnsignedInteger {
+        wrapping(size, data: .init(string.utf8))
     }
     
     public func adding(_ date: Date) -> Self {
@@ -107,32 +111,16 @@ extension Data {
     }
     
     public func adding(_ uuid: UUID) -> Self {
-        adding(uuid.uuidString)
+        adding(UInt8.self, string: uuid.uuidString)
     }
     
     public func adding(_ bool: Bool) -> Self {
         self + [bool ? 1 : 0]
     }
     
-    public func adding(_ number: UInt8) -> Self {
-        self + [number]
-    }
-    
-    public func adding(_ number: UInt16) -> Self {
+    public func adding<I>(_ number: I) -> Self where I : UnsignedInteger {
         self + Swift.withUnsafeBytes(of: number) {
-            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: 2)
-        }
-    }
-    
-    public func adding(_ number: UInt32) -> Self {
-        self + Swift.withUnsafeBytes(of: number) {
-            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: 4)
-        }
-    }
-    
-    public func adding(_ number: UInt64) -> Self {
-        self + Swift.withUnsafeBytes(of: number) {
-            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: 8)
+            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: MemoryLayout<I>.size)
         }
     }
     

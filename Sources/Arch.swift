@@ -30,6 +30,6 @@ extension Arch {
         var data = await data
             .decompressed
         
-        return await .init(version: data.removeFirst(), timestamp: data.uInt32(), data: data)
+        return await .init(version: data.removeFirst(), timestamp: data.number(), data: data)
     }
 }
