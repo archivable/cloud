@@ -111,7 +111,7 @@ final class DataTests: XCTestCase {
         let data = Data()
             .adding(UInt64.self, collection: [A(number: 3), .init(number: 2)])
         var parse = data
-        XCTAssertEqual([A(number: 3), .init(number: 2)], parse.sequence(UInt64.self))
+        XCTAssertEqual([A(number: 3), .init(number: 2)], parse.collection(UInt64.self))
         
         parse = data
         XCTAssertEqual(2, parse.number() as UInt64)

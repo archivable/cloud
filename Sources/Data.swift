@@ -43,7 +43,7 @@ extension Data {
         return transform(&mutating)
     }
     
-    public mutating func sequence<I, S>(_ size: I.Type) -> [S] where I : UnsignedInteger, S : Storable {
+    public mutating func collection<I, S>(_ size: I.Type) -> [S] where I : UnsignedInteger, S : Storable {
         (0 ..< .init(number() as I))
             .map { _ in
                 .init(data: &self)
