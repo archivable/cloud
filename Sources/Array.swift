@@ -58,6 +58,16 @@ extension Array {
         return array
     }
     
+    public func moving(criteria: (Element) -> Bool, to: Int) -> Self {
+        var array = self
+        array
+            .first(where: criteria)
+            .map {
+                array.insert($0, at: Swift.min(to, array.count))
+            }
+        return array
+    }
+    
     public func removing(index: Int) -> Self {
         var array = self
         array.remove(at: index)
