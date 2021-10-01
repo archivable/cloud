@@ -37,6 +37,19 @@ extension Array {
         return array
     }
     
+    public func mutating(criteria: (Element) -> Bool, transform: (Element) -> Element?) -> Self {
+        var array = self
+        array
+            .firstIndex(where: criteria)
+            .map { index in
+                transform(array[index])
+                    .map {
+                        array[index] = $0
+                    }
+            }
+        return array
+    }
+    
     public func mutating(index: Int, transform: (Element) -> Element?) -> Self {
         var array = self
         transform(array[index])
