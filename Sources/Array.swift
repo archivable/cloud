@@ -74,7 +74,7 @@ extension Array {
     public func moving(criteria: (Element) -> Bool, to: Int) -> Self {
         var array = self
         array
-            .first(where: criteria)
+            .remove(where: criteria)
             .map {
                 array.insert($0, at: Swift.min(to, array.count))
             }
