@@ -121,6 +121,28 @@ final class DataTests: XCTestCase {
     
     func testNumber() {
         XCTAssertEqual(1, Data().adding(UInt8(100)).count)
+        
+        var data1 = Data().adding(UInt64(100))
+        XCTAssertEqual(UInt64(100), data1.number())
+        
+        var data2 = Data().adding(Int(100))
+        XCTAssertEqual(Int(100), data2.number())
+    }
+    
+    func testStringCollection() {
+        let strings = ["hello", "world"]
+        var data = Data()
+            .adding(collection: UInt16.self, strings: UInt32.self, items: strings)
+        
+        XCTAssertEqual(strings, data.items(collection: UInt16.self, strings: UInt32.self))
+    }
+    
+    func testNumberCollection() {
+        let numbers = [34, 56]
+        var data = Data()
+            .adding(size: UInt16.self, collection: numbers)
+        
+        XCTAssertEqual(numbers, data.collection(size: UInt16.self))
     }
     
     func testLongString() {
