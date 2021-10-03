@@ -121,6 +121,7 @@ final class DataTests: XCTestCase {
     
     func testNumber() {
         XCTAssertEqual(1, Data().adding(UInt8(100)).count)
+        XCTAssertEqual(2, Data().adding(UInt16(100)).count)
         
         var data1 = Data().adding(UInt64(100))
         XCTAssertEqual(UInt64(100), data1.number())
