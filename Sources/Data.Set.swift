@@ -15,12 +15,12 @@ extension Data {
         self + storable.data
     }
     
-    public func adding<I, S>(size: I.Type, collection: [S]) -> Self where I : UnsignedInteger, S : Storable {
+    public func adding<I, C>(size: I.Type, collection: C) -> Self where C : Collection, C.Element : Storable, I : UnsignedInteger {
         adding(I(collection.count))
             .adding(collection.flatMap(\.data))
     }
     
-    public func adding<I, B>(size: I.Type, collection: [B]) -> Self where I : UnsignedInteger, B : BinaryInteger {
+    public func adding<I, C>(size: I.Type, collection: C) -> Self where C : Collection, C.Element : BinaryInteger, I : UnsignedInteger {
         collection
             .reduce(adding(I(collection.count))) {
                 $0
@@ -28,7 +28,7 @@ extension Data {
             }
     }
     
-    public func adding<I, J>(collection: I.Type, strings: J.Type, items: [String]) -> Self where I : UnsignedInteger, J : UnsignedInteger {
+    public func adding<I, J, C>(collection: I.Type, strings: J.Type, items: C) -> Self where C : Collection, C.Element == String, I : UnsignedInteger, J : UnsignedInteger {
         items
             .reduce(adding(I(items.count))) {
                 $0
