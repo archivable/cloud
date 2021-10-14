@@ -300,7 +300,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     
     private func store(contract: Contract) async {
         contracts.append(contract)
-        Swift.print("cloud contracts \(contracts.count)")
         let initial = model
         await MainActor
             .run {
