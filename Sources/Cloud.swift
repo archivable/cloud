@@ -132,7 +132,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 ($0.0, Date())
             }
             .removeDuplicates {
-                Calendar.current.dateComponents([.second], from: $0.1, to: $1.1).second! < 2
+                Calendar.current.dateComponents([.second], from: $0.1, to: $1.1).second! < 1
             }
             .map {
                 $0.0
