@@ -263,14 +263,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
             .store(in: &subs)
         
-        if let stored = (await Task
-            .detached(priority: .userInitiated) { () -> Output? in
-                guard let data = try? Data(contentsOf: url) else { return nil }
-                return await .prototype(data: data)
-            }
-            .value) {
-            model = stored
-            local.send(stored)
+        if let data = try? Data(contentsOf: url) {
+            model = await .prototype(data: data)
+            local.send(model)
         } else {
             local.send(model)
         }
