@@ -66,22 +66,22 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         
         record
             .sink { id in
-//                Task {
-//                    await database.configuredWith(configuration: config) { base in
-//                        let subscription = CKQuerySubscription(
-//                            recordType: type,
-//                            predicate: .init(format: "recordID = %@", id),
-//                            options: [.firesOnRecordUpdate])
-//                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-//
-//                        let old = try? await base.allSubscriptions()
-//
-//                        _ = try? await base.modifySubscriptions(saving: [subscription],
-//                                                                deleting: old?
-//                                                                    .map(\.subscriptionID)
-//                                                                ?? [])
-//                    }
-//                }
+                Task {
+                    await database.configuredWith(configuration: config) { base in
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+
+                        let old = try? await base.allSubscriptions()
+
+                        _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                deleting: old?
+                                                                    .map(\.subscriptionID)
+                                                                ?? [])
+                    }
+                }
             }
             .store(in: &subs)
         
@@ -187,11 +187,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         let record = CKRecord(recordType: type, recordID: id)
                         record[asset] = CKAsset(fileURL: url)
                         
-                        do {
-                            _ = try await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
-                        } catch let error {
-                            Swift.print(error)
-                        }
+                        _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                     }
                 }
             }
