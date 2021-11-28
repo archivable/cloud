@@ -66,24 +66,22 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         
         record
             .sink { id in
-//                Task {
-//                    let predicate = NSPredicate(format: "recordID = %@", id)
-//                    Swift.print(predicate)
-//                    await database.configuredWith(configuration: config) { base in
-//                        let subscription = CKQuerySubscription(
-//                            recordType: type,
-//                            predicate: predicate,
-//                            options: [.firesOnRecordUpdate])
-//                        subscription.notificationInfo = .init(alertBody: "asds", title: "asdsa", subtitle: "asdasdas", shouldSendContentAvailable: true)
-//
-//                        let old = try? await base.allSubscriptions()
-//
-//                        _ = try? await base.modifySubscriptions(saving: [subscription],
-//                                                                deleting: old?
-//                                                                    .map(\.subscriptionID)
-//                                                                ?? [])
-//                    }
-//                }
+                Task {
+                    await database.configuredWith(configuration: config) { base in
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(alertBody: "asds", title: "asdsa", subtitle: "asdasdas", shouldSendContentAvailable: true)
+
+                        let old = try? await base.allSubscriptions()
+
+                        _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                deleting: old?
+                                                                    .map(\.subscriptionID)
+                                                                ?? [])
+                    }
+                }
             }
             .store(in: &subs)
         
@@ -100,7 +98,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             promise(.success(nil))
                             return
                         }
-                        Swift.print(prefix + user.recordName)
                         promise(.success(.init(recordName: prefix + user.recordName)))
                     }
                 }
@@ -185,23 +182,11 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 id
             }
             .sink { id in
-                Swift.print("will save")
                 Task {
                     await database.configuredWith(configuration: config) { base in
                         let record = CKRecord(recordType: type, recordID: id)
                         record[asset] = CKAsset(fileURL: url)
-                        
-                        Swift.print("saving")
-                        Swift.print("saving \(asset) \(url) \(CKAsset(fileURL: url)) \(id) \(type)")
-                        
-                        do {
-                            let a = try await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
-                            Swift.print(a)
-                            Swift.print("end")
-                        } catch let error {
-                            Swift.print("error")
-                            Swift.print(error)
-                        }
+                        _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                     }
                 }
             }
