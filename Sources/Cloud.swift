@@ -67,12 +67,14 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         record
             .sink { id in
                 Task {
+                    let predicate = NSPredicate(format: "recordID = %@", id)
+                    Swift.print(predicate)
                     await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
                             recordType: type,
-                            predicate: .init(format: "recordID = %@", id),
+                            predicate: predicate,
                             options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                        subscription.notificationInfo = .init(alertBody: "asds", title: "asdsa", subtitle: "asdasdas", shouldSendContentAvailable: true)
 
                         let old = try? await base.allSubscriptions()
 
