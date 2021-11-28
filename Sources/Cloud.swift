@@ -98,6 +98,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             promise(.success(nil))
                             return
                         }
+                        Swift.print(prefix + user.recordName)
                         promise(.success(.init(recordName: prefix + user.recordName)))
                     }
                 }
