@@ -11,6 +11,14 @@ extension Data {
         }
     }
     
+    public func adding<P>(optional: P?) -> Self where P : Storable {
+        optional
+            .map {
+                adding($0)
+            }
+        ?? self
+    }
+    
     public func adding<P>(_ storable: P) -> Self where P : Storable {
         self + storable.data
     }
