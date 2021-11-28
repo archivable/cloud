@@ -195,7 +195,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         Swift.print("saving \(asset) \(url) \(CKAsset(fileURL: url)) \(id) \(type)")
                         
                         do {
-                            try await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+                            let a = try await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+                            Swift.print(a)
+                            Swift.print("end")
                         } catch let error {
                             Swift.print("error")
                             Swift.print(error)
