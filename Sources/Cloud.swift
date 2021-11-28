@@ -186,7 +186,12 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                     await database.configuredWith(configuration: config) { base in
                         let record = CKRecord(recordType: type, recordID: id)
                         record[asset] = CKAsset(fileURL: url)
-                        _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+                        
+                        do {
+                            _ = try await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+                        } catch let error {
+                            Swift.print(error)
+                        }
                     }
                 }
             }
