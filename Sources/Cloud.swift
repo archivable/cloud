@@ -64,6 +64,49 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         config.timeoutIntervalForResource = 10
         config.qualityOfService = .userInitiated
         
+        record
+            .sink { id in
+                Task {
+                    await database.configuredWith(configuration: config) { base in
+                        let subscription = CKQuerySubscription(
+                            recordType: type,
+                            predicate: .init(format: "recordID = %@", id),
+                            options: [.firesOnRecordUpdate])
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                        
+                        let old = try? await base.allSubscriptions()
+
+                        _ = try? await base.modifySubscriptions(saving: [subscription],
+                                                                deleting: [])
+                    }
+                }
+            }
+            .store(in: &subs)
+        
+        pull
+            .merge(with: push)
+            .flatMap { _ in
+                Future { promise in
+                    Task {
+                        guard
+                            let status = try? await container.accountStatus(),
+                            status == .available,
+                            let user = try? await container.userRecordID()
+                        else {
+                            promise(.success(nil))
+                            return
+                        }
+                        promise(.success(.init(recordName: prefix + user.recordName)))
+                    }
+                }
+            }
+            .compactMap {
+                $0
+            }
+            .first()
+            .subscribe(record)
+            .store(in: &subs)
+        
         save
             .map {
                 ($0, true)
@@ -102,30 +145,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
             .store(in: &subs)
         
-        pull
-            .merge(with: push)
-            .flatMap { _ in
-                Future { promise in
-                    Task {
-                        guard
-                            let status = try? await container.accountStatus(),
-                            status == .available,
-                            let user = try? await container.userRecordID()
-                        else {
-                            promise(.success(nil))
-                            return
-                        }
-                        promise(.success(.init(recordName: prefix + user.recordName)))
-                    }
-                }
-            }
-            .compactMap {
-                $0
-            }
-            .first()
-            .subscribe(record)
-            .store(in: &subs)
-        
         record
             .combineLatest(pull)
             .map {
@@ -151,27 +170,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         return await .prototype(data: data)
                     }
                     remote.send(result)
-                }
-            }
-            .store(in: &subs)
-        
-        record
-            .sink { id in
-                Task {
-                    await database.configuredWith(configuration: config) { base in
-                        let subscription = CKQuerySubscription(
-                            recordType: type,
-                            predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                        
-                        let old = try? await base.allSubscriptions()
-
-                        _ = try? await base.modifySubscriptions(saving: [subscription],
-                                                                deleting: old?
-                                                                    .map(\.subscriptionID)
-                                                                ?? [])
-                    }
                 }
             }
             .store(in: &subs)
