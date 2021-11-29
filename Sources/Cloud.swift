@@ -4,6 +4,18 @@ import Combine
 public final actor Cloud<Output>: Publisher where Output : Arch {
     public typealias Failure = Never
     
+    public static func new(identifier: String) -> Self {
+        let cloud = Self()
+        Task {
+            await cloud.load(identifier)
+        }
+        return cloud
+    }
+    
+    public static var ephemeral: Self {
+        .init()
+    }
+    
     public var model = Output()
     nonisolated public let pull = PassthroughSubject<Void, Failure>()
     nonisolated let save = PassthroughSubject<Output, Failure>()
@@ -28,9 +40,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         }
     }
     
-    public init() { }
+    private init() { }
     
-    public func load(_ identifier: String) async {
+    private func load(_ identifier: String) async {
         let push = PassthroughSubject<Void, Failure>()
         let store = PassthroughSubject<(Output, Bool), Failure>()
         let remote = PassthroughSubject<Output?, Failure>()
