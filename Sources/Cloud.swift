@@ -17,6 +17,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     }
     
     public var model = Output()
+    nonisolated public let ready = DispatchGroup()
     nonisolated public let pull = PassthroughSubject<Void, Failure>()
     nonisolated let save = PassthroughSubject<Output, Failure>()
     private(set) var contracts = [Contract]()
@@ -40,7 +41,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         }
     }
     
-    private init() { }
+    private init() {
+        ready.enter()
+    }
     
     private func load(_ identifier: String) async {
         let push = PassthroughSubject<Void, Failure>()
@@ -269,6 +272,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         } else {
             local.send(model)
         }
+        
+        ready.leave()
     }
     
     public func stream() async {
