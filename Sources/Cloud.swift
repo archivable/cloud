@@ -28,13 +28,17 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
-                sub = timeout(.seconds(9), scheduler: queue)
+                sub = dropFirst()
+                    .timeout(.seconds(9), scheduler: queue)
+                    .first()
                     .sink { _ in
                         sub?.cancel()
-                        continuation.resume(returning: false)
+                        continuation
+                            .resume(returning: false)
                     } receiveValue: { _ in
                         sub?.cancel()
-                        continuation.resume(returning: true)
+                        continuation
+                            .resume(returning: true)
                     }
                 pull.send()
             }
@@ -76,9 +80,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate])
                         subscription.notificationInfo = .init(alertBody: "asds", title: "asdsa", subtitle: "asdasdas", shouldSendContentAvailable: true)
-
+                        
                         let old = try? await base.allSubscriptions()
-
+                        
                         _ = try? await base.modifySubscriptions(saving: [subscription],
                                                                 deleting: old?
                                                                     .map(\.subscriptionID)
@@ -124,22 +128,22 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 $0
             }
             .merge(with: remote
-                            .compactMap {
-                                $0
-                            }
-                            .map {
-                                ($0, $0.timestamp)
-                            }
-                            .merge(with: save
-                                            .map { _ -> (Output?, UInt32) in
-                                                (nil, .now)
-                                            })
-                            .removeDuplicates {
-                                $0.1 >= $1.1
-                            }
-                            .compactMap {
-                                $0.0
-                            })
+                    .compactMap {
+                $0
+            }
+                    .map {
+                ($0, $0.timestamp)
+            }
+                    .merge(with: save
+                            .map { _ -> (Output?, UInt32) in
+                (nil, .now)
+            })
+                    .removeDuplicates {
+                $0.1 >= $1.1
+            }
+                    .compactMap {
+                $0.0
+            })
             .removeDuplicates {
                 $0.timestamp >= $1.timestamp
             }
@@ -197,16 +201,16 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         
         local
             .merge(with: save
-                            .map {
-                                $0 as Output?
-                            })
+                    .map {
+                $0 as Output?
+            })
             .combineLatest(remote
                             .compactMap {
-                                $0
-                            }
+                $0
+            }
                             .removeDuplicates {
-                                $0.timestamp <= $1.timestamp
-                            })
+                $0.timestamp <= $1.timestamp
+            })
             .filter {
                 $0.0 == nil ? true : $0.0!.timestamp < $0.1.timestamp
             }
@@ -222,8 +226,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
             .combineLatest(local
                             .compactMap {
-                                $0
-                            }
+                $0
+            }
                             .merge(with: save))
             .removeDuplicates {
                 $0.0.1 == $1.0.1
@@ -285,7 +289,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
         
         await send(model: model)
-
+        
         save.send(model)
     }
     
@@ -320,7 +324,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
 }
 
 #if DEBUG
-    private let suffix = ".debug.data"
+private let suffix = ".debug.data"
 #else
-    private let suffix = ".data"
+private let suffix = ".data"
 #endif
