@@ -66,8 +66,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         url.exclude()
         
         let config = CKOperation.Configuration()
-        config.timeoutIntervalForRequest = 10
-        config.timeoutIntervalForResource = 10
+        config.timeoutIntervalForRequest = 10000
+        config.timeoutIntervalForResource = 10000
         config.qualityOfService = .userInitiated
         
         record
