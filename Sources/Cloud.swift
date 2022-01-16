@@ -82,7 +82,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             recordType: type,
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(alertBody: "asds", title: "asdsa", subtitle: "asdasdas", shouldSendContentAvailable: true)
+                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                         
                         let old = try? await base.allSubscriptions()
                         
