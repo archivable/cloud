@@ -29,7 +29,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
                 sub = dropFirst()
-//                    .timeout(.seconds(9), scheduler: queue)
+                    .first()
+                    .timeout(.seconds(13), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
                         continuation
@@ -46,12 +47,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     
     private init() {
         ready.enter()
-    }
-    
-    private var subssss: CKSubscription?
-    
-    func save(a: CKSubscription) {
-        self.subssss = a
     }
     
     private func load(_ identifier: String) async {
@@ -72,30 +67,21 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         url.exclude()
         
         let config = CKOperation.Configuration()
-        config.timeoutIntervalForRequest = 10000
-        config.timeoutIntervalForResource = 10000
+        config.timeoutIntervalForRequest = 13
+        config.timeoutIntervalForResource = 13
         config.qualityOfService = .userInitiated
         
         record
             .sink { id in
-                Task { [weak self] in
-                    Swift.print("subs")
+                Task {
                     await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
                             recordType: type,
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate])
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                        
-                        let old = try? await base.allSubscriptions()
 
-                        let res = try? await base.modifySubscriptions(saving: [subscription],
-                                                                deleting: [])
-                        let a = try! res?.saveResults.first!.value.get()
-                        
-                        Swift.print("subs done")
-                        
-                        await self?.save(a: a!)
+                        _ = try? await base.save(subscription)
                     }
                 }
             }
