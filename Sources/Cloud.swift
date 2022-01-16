@@ -29,7 +29,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
                 sub = dropFirst()
-                    .first()
                     .timeout(.seconds(9), scheduler: queue)
                     .sink { _ in
                         sub?.cancel()
