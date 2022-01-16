@@ -73,6 +73,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         record
             .sink { id in
                 Task {
+                    Swift.print("subs")
                     await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
                             recordType: type,
@@ -86,6 +87,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                                                                 deleting: old?
                                                                     .map(\.subscriptionID)
                                                                 ?? [])
+                        Swift.print("subs done")
                     }
                 }
             }
