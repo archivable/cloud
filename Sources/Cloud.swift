@@ -90,9 +90,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         let old = try? await base.allSubscriptions()
 
                         let res = try? await base.modifySubscriptions(saving: [subscription],
-                                                                deleting: old?
-                                                                    .map(\.subscriptionID)
-                                                                ?? [])
+                                                                deleting: [])
                         let a = try! res?.saveResults.first!.value.get()
                         
                         Swift.print("subs done")
