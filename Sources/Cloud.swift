@@ -48,6 +48,12 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         ready.enter()
     }
     
+    private var subssss: CKSubscription?
+    
+    func save(a: CKSubscription) {
+        self.subssss = a
+    }
+    
     private func load(_ identifier: String) async {
         let push = PassthroughSubject<Void, Failure>()
         let store = PassthroughSubject<(Output, Bool), Failure>()
@@ -72,7 +78,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         
         record
             .sink { id in
-                Task {
+                Task { [weak self] in
                     Swift.print("subs")
                     await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
@@ -82,12 +88,16 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                         
                         let old = try? await base.allSubscriptions()
-                        
-                        _ = try? await base.modifySubscriptions(saving: [subscription],
+
+                        let res = try? await base.modifySubscriptions(saving: [subscription],
                                                                 deleting: old?
                                                                     .map(\.subscriptionID)
                                                                 ?? [])
+                        let a = try! res?.saveResults.first!.value.get()
+                        
                         Swift.print("subs done")
+                        
+                        await self?.save(a: a!)
                     }
                 }
             }
