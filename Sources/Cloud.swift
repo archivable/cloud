@@ -27,15 +27,18 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     public var notified: Bool {
         get async {
             await withUnsafeContinuation { continuation in
+                Swift.print("continuation")
                 var sub: AnyCancellable?
                 sub = dropFirst()
                     .timeout(.seconds(9), scheduler: queue)
                     .first()
                     .sink { _ in
+                        Swift.print("sink")
                         sub?.cancel()
                         continuation
                             .resume(returning: false)
                     } receiveValue: { _ in
+                        Swift.print("timeout")
                         sub?.cancel()
                         continuation
                             .resume(returning: true)
