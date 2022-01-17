@@ -2,6 +2,8 @@ import Foundation
 import Archivable
 
 struct Archive: Arch {
+    
+    
     static var version = UInt8(128)
     
     var counter: Int
@@ -21,7 +23,11 @@ struct Archive: Arch {
     }
     
     init() {
-        timestamp = 0
-        counter = 0
+        self.init(timestamp: 0, counter: 0)
+    }
+    
+    init(timestamp: UInt32 = 0, counter: Int = 0) {
+        self.timestamp = timestamp
+        self.counter = counter
     }
 }

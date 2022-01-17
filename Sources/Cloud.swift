@@ -62,7 +62,12 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
+    deinit {
+        Swift.print("cloud gone")
+    }
+    
     func load(container: CloudContainer) async {
+        
         url.exclude()
         
         let config = CKOperation.Configuration()
@@ -107,43 +112,30 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 $0
             }
             .first()
-            .subscribe(record)
+            .sink { [weak self] in
+                self?.record.send($0)
+            }
             .store(in: &subs)
         
         save
             .map {
                 ($0, true)
             }
-            .subscribe(store)
+            .sink { [weak self] in
+                self?.store.send($0)
+            }
             .store(in: &subs)
         
-        local
-            .compactMap {
-                $0
-            }
-            .merge(with: remote
-                    .compactMap {
-                $0
-            }
-                    .map {
-                ($0, $0.timestamp)
-            }
-                    .merge(with: save
-                            .map { _ -> (Output?, UInt32) in
-                (nil, .now)
-            })
-                    .removeDuplicates {
-                $0.1 >= $1.1
-            }
-                    .compactMap {
-                $0.0
-            })
+        local.compactMap { $0 }
+            .merge(with: remote.compactMap { $0 }.map { ($0, $0.timestamp) }
+                    .merge(with: save.map { _ -> (Output?, UInt32) in (nil, .now) })
+                    .removeDuplicates { $0.1 >= $1.1 }.compactMap { $0.0 })
             .removeDuplicates {
                 $0.timestamp >= $1.timestamp
             }
-            .sink { model in
-                Task {
-                    await self.send(model: model)
+            .sink { [weak self] model in
+                Task { [weak self] in
+                    await self?.send(model: model)
                 }
             }
             .store(in: &subs)
@@ -159,8 +151,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .map {
                 $0.0
             }
-            .sink { id in
-                Task {
+            .sink { [weak self] id in
+                Task { [weak self] in
                     let result = await container.database.configured(with: config) { base -> Output? in
                         guard
                             let record = try? await base.record(for: id),
@@ -172,7 +164,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         }
                         return await .prototype(data: data)
                     }
-                    self.remote.send(result)
+                    self?.remote.send(result)
                 }
             }
             .store(in: &subs)
@@ -182,11 +174,11 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .map { id, _ in
                 id
             }
-            .sink { id in
-                Task {
+            .sink { [weak self] id in
+                Task { [weak self] in
                     await container.database.configured(with: config) { base in
                         let record = CKRecord(recordType: Type, recordID: id)
-                        record[Asset] = CKAsset(fileURL: self.url)
+                        record[Asset] = CKAsset(fileURL: self!.url)
                         _ = try? await base.modifyRecords(saving: [record],
                                                           deleting: [],
                                                           savePolicy: .allKeys,
@@ -214,7 +206,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .map {
                 ($1, false)
             }
-            .subscribe(store)
+            .sink { [weak self] in
+                self?.store.send($0)
+            }
             .store(in: &subs)
         
         remote
@@ -233,21 +227,23 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 item.0.0 == nil ? true : item.0.0!.timestamp < item.1.timestamp
             }
             .map { _ in }
-            .subscribe(push)
+            .sink { [weak self] in
+                self?.push.send()
+            }
             .store(in: &subs)
         
         store
             .debounce(for: .milliseconds(500), scheduler: queue)
-            .sink { storing in
+            .sink { [weak self] storing in
                 Task
-                    .detached(priority: .userInitiated) {
+                    .detached(priority: .userInitiated) { [weak self] in
                         let data = await storing
                             .0
                             .compressed
                         do {
-                            try data.write(to: self.url, options: .atomic)
+                            try data.write(to: self!.url, options: .atomic)
                             if storing.1 {
-                                self.push.send()
+                                self?.push.send()
                             }
                         } catch { }
                     }
@@ -261,9 +257,14 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .removeDuplicates {
                 $0.timestamp <= $1.timestamp
             }
-            .sink {
-                guard $0.timestamp > self.model.timestamp else { return }
-                self.model = $0
+            .sink { [weak self] model in
+                Task { [weak self] in
+                    guard
+                        let current = await self?.model.timestamp,
+                        model.timestamp > current
+                    else { return }
+                    await self?.upate(model: model)
+                }
             }
             .store(in: &subs)
         
@@ -297,6 +298,10 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         Task {
             await store(contract: .init(sub: sub))
         }
+    }
+    
+    private func upate(model: Output) {
+        self.model = model
     }
     
     private func store(contract: Contract) async {

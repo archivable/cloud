@@ -11,8 +11,13 @@ final class FlowTests: XCTestCase {
     override func setUp() async throws {
         container = .init()
         cloud = .init()
+        try? FileManager.default.removeItem(at: cloud.url)
         await cloud.load(container: container)
         subs = []
+    }
+    
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: cloud.url)
     }
     
     func testSubscription() {
@@ -33,7 +38,7 @@ final class FlowTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testPullMergePushNotAvailable() {
+    func testPullMergePush_NotAvailable() {
         cloud
             .record
             .sink { _ in
@@ -58,7 +63,7 @@ final class FlowTests: XCTestCase {
         cloud.push.send()
     }
     
-    func testPullMergePushAvailablePull() {
+    func testPullMergePush_Available_Pull() {
         let expect = expectation(description: "")
         
         cloud
@@ -75,7 +80,7 @@ final class FlowTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testPullMergePushAvailablePush() {
+    func testPullMergePush_Available_Push() {
         let expect = expectation(description: "")
         
         cloud
@@ -92,20 +97,52 @@ final class FlowTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testLocalMergeRemote() {
+    func testLocalMergeRemoteMergeSave_Local() {
         let expect = expectation(description: "")
         
+        cloud.remote.send(.init(timestamp: 1))
+        cloud.save.send(.init(timestamp: 2))
+        
         cloud
-            .record
+            .dropFirst()
             .sink {
-                XCTAssertEqual("ilorem", $0.recordName)
+                XCTAssertEqual(3, $0.timestamp)
                 expect.fulfill()
             }
             .store(in: &subs)
         
-        container.status = .available
-        cloud.push.send()
+        cloud.local.send(.init(timestamp: 3))
         
         waitForExpectations(timeout: 1)
+    }
+    
+    func testLocalMergeRemoteMergeSave_Remote() {
+        let expect = expectation(description: "")
+        
+        cloud.local.send(.init(timestamp: 1))
+        
+        cloud
+            .dropFirst()
+            .sink {
+                XCTAssertEqual(2, $0.timestamp)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.remote.send(.init(timestamp: 2))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testLocalMergeRemoteMergeSave_Save() {
+        cloud.save.send(.init(timestamp: 3))
+        cloud
+            .dropFirst()
+            .sink { _ in
+                XCTFail()
+            }
+            .store(in: &subs)
+        
+        cloud.remote.send(.init(timestamp: 2))
     }
 }
