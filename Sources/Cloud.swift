@@ -31,6 +31,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     nonisolated public let pull = PassthroughSubject<Void, Failure>()
     private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
+    nonisolated let url: URL
     nonisolated let save = PassthroughSubject<Output, Failure>()
     nonisolated let push = PassthroughSubject<Void, Failure>()
     nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
@@ -62,14 +63,14 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     
     private init() {
         ready.enter()
+        url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
     private func load(_ identifier: String) async {
+        url.exclude()
+        
         let container = CKContainer(identifier: identifier)
         let database = container.publicCloudDatabase
-        
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
-        url.exclude()
         
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
@@ -192,7 +193,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 Task {
                     await database.configuredWith(configuration: config) { base in
                         let record = CKRecord(recordType: Type, recordID: id)
-                        record[Asset] = CKAsset(fileURL: url)
+                        record[Asset] = CKAsset(fileURL: self.url)
                         _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                     }
                 }
@@ -248,7 +249,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             .0
                             .compressed
                         do {
-                            try data.write(to: url, options: .atomic)
+                            try data.write(to: self.url, options: .atomic)
                             if storing.1 {
                                 self.push.send()
                             }
