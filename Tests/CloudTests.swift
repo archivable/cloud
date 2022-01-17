@@ -6,9 +6,8 @@ final class CloudTests: XCTestCase {
     private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
     
-    override func setUp() async throws {
+    override func setUp() {
         cloud = .init()
-        await cloud.load(container: ContainerMock())
         subs = []
     }
     

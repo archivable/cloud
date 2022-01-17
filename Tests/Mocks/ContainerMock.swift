@@ -2,16 +2,16 @@ import Foundation
 import CloudKit
 @testable import Archivable
 
-struct ContainerMock: CloudContainer {
+class ContainerMock: CloudContainer {
+    var database: CloudDatabase = DatabaseMock()
+    var status = CKAccountStatus.noAccount
+    var id = "lorem"
+    
     func accountStatus() async throws -> CKAccountStatus {
-        .available
+        status
     }
     
     func userRecordID() async throws -> CKRecord.ID {
-        .init()
-    }
-    
-    var database: CloudDatabase {
-        DatabaseMock()
+        .init(recordName: id)
     }
 }
