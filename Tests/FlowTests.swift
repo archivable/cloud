@@ -7,6 +7,7 @@ final class FlowTests: XCTestCase {
     private var container: ContainerMock!
     private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
+    private var remote: URL!
     
     override func setUp() async throws {
         container = .init()
@@ -14,6 +15,9 @@ final class FlowTests: XCTestCase {
         try? FileManager.default.removeItem(at: cloud.url)
         await cloud.load(container: container)
         subs = []
+        
+        remote = .init(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        try! await Archive(timestamp: 99, counter: 22).compressed.write(to: remote)
     }
     
     override func tearDown() {
@@ -144,5 +148,27 @@ final class FlowTests: XCTestCase {
             .store(in: &subs)
         
         cloud.remote.send(.init(timestamp: 2))
+    }
+    
+    func testRecordCombinePull() {
+        let expect = expectation(description: "")
+        
+        let asset = CKAsset(fileURL: remote)
+        let record = CKRecord(recordType: "lorem")
+        record["payload"] = asset
+        (container.database as! DatabaseMock).record = record
+        
+        cloud
+            .remote
+            .sink {
+                XCTAssertEqual(99, $0?.timestamp)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.record.send(.init(recordName: "lorem"))
+        cloud.pull.send()
+        
+        waitForExpectations(timeout: 1)
     }
 }
