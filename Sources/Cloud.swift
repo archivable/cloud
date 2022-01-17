@@ -17,13 +17,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     public static func new(identifier: String) -> Self {
         let cloud = Self()
         Task {
-            await cloud.load(identifier)
+            await cloud.load(container: CKContainer(identifier: identifier))
         }
         return cloud
-    }
-    
-    public static var ephemeral: Self {
-        .init()
     }
     
     public var model = Output()
@@ -61,16 +57,13 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         }
     }
     
-    private init() {
+    init() {
         ready.enter()
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
-    private func load(_ identifier: String) async {
+    func load(container: CloudContainer) async {
         url.exclude()
-        
-        let container = CKContainer(identifier: identifier)
-        let database = container.publicCloudDatabase
         
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
@@ -80,7 +73,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         record
             .sink { id in
                 Task {
-                    await database.configuredWith(configuration: config) { base in
+                    await container.database.configured(with: config) { base in
                         let subscription = CKQuerySubscription(
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
@@ -168,7 +161,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
             .sink { id in
                 Task {
-                    let result = await database.configuredWith(configuration: config) { base -> Output? in
+                    let result = await container.database.configured(with: config) { base -> Output? in
                         guard
                             let record = try? await base.record(for: id),
                             let asset = record[Asset] as? CKAsset,
@@ -191,10 +184,13 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
             .sink { id in
                 Task {
-                    await database.configuredWith(configuration: config) { base in
+                    await container.database.configured(with: config) { base in
                         let record = CKRecord(recordType: Type, recordID: id)
                         record[Asset] = CKAsset(fileURL: self.url)
-                        _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+                        _ = try? await base.modifyRecords(saving: [record],
+                                                          deleting: [],
+                                                          savePolicy: .allKeys,
+                                                          atomically: true)
                     }
                 }
             }
