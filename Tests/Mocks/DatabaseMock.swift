@@ -6,6 +6,7 @@ import Combine
 class DatabaseMock: CloudDatabase {
     var record: CKRecord?
     let saved = PassthroughSubject<CKSubscription, Never>()
+    let pushed = PassthroughSubject<Void, Never>()
     
     func configured<R>(with: CKOperation.Configuration, body: (CloudDatabase) async -> R) async -> R {
         await body(self)
@@ -22,6 +23,7 @@ class DatabaseMock: CloudDatabase {
     }
     
     func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, atomically: Bool) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
-        ([:], [:])
+        pushed.send()
+        return ([:], [:])
     }
 }

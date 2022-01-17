@@ -127,15 +127,29 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .store(in: &subs)
         
         local.compactMap { $0 }
-            .merge(with: remote.compactMap { $0 }.map { ($0, $0.timestamp) }
-                    .merge(with: save.map { _ -> (Output?, UInt32) in (nil, .now) })
-                    .removeDuplicates { $0.1 >= $1.1 }.compactMap { $0.0 })
-            .removeDuplicates {
-                $0.timestamp >= $1.timestamp
+            .merge(with: remote.compactMap { $0 } )
+        
+            .flatMap { [weak self] received in
+                Future { promise in
+                    Task { [weak self] in
+                        guard
+                            let current = await self?.model.timestamp,
+                            received.timestamp > current
+                        else {
+                            promise(.success(nil))
+                            return
+                        }
+                        promise(.success(received))
+                    }
+                }
             }
-            .sink { [weak self] model in
+            .compactMap {
+                $0
+            }
+            .sink { [weak self] (model: Output) in
                 Task { [weak self] in
-                    await self?.send(model: model)
+                    await self?.upate(model: model)
+                    await self?.publish(model: model)
                 }
             }
             .store(in: &subs)
@@ -189,17 +203,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .store(in: &subs)
         
         local
-            .merge(with: save
-                    .map {
-                $0 as Output?
-            })
-            .combineLatest(remote
-                            .compactMap {
-                $0
-            }
-                            .removeDuplicates {
-                $0.timestamp <= $1.timestamp
-            })
+            .merge(with: save.map { $0 as Output? })
+            .combineLatest(remote.compactMap { $0 })
             .filter {
                 $0.0 == nil ? true : $0.0!.timestamp < $0.1.timestamp
             }
@@ -215,10 +220,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .map {
                 ($0, .now)
             }
-            .combineLatest(local
-                            .compactMap {
-                $0
-            }
+            .combineLatest(local.compactMap { $0 }
                             .merge(with: save))
             .removeDuplicates {
                 $0.0.1 == $1.0.1
@@ -269,7 +271,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .store(in: &subs)
         
         if let data = try? Data(contentsOf: url) {
-            model = await .prototype(data: data)
+            upate(model: await .prototype(data: data))
             local.send(model)
         } else {
             local.send(model)
@@ -286,7 +288,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 $0.sub?.subscriber != nil
             }
         
-        await send(model: model)
+        await publish(model: model)
         
         save.send(model)
     }
@@ -300,7 +302,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         }
     }
     
-    private func upate(model: Output) {
+    func upate(model: Output) {
         self.model = model
     }
     
@@ -313,7 +315,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
     }
     
-    private func send(model: Output) async {
+    private func publish(model: Output) async {
         let subscribers = contracts.compactMap(\.sub?.subscriber)
         await MainActor
             .run {

@@ -67,11 +67,13 @@ final class CloudTests: XCTestCase {
     
     func testSubscription() {
         let expect = expectation(description: "")
+        let inversed = expectation(description: "")
+        inversed.isInverted = true
         
         _ = cloud
             .dropFirst()
             .sink { _ in
-                XCTFail()
+                inversed.fulfill()
             }
         
         cloud
