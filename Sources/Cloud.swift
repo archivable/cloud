@@ -128,7 +128,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         
         local.compactMap { $0 }
             .merge(with: remote.compactMap { $0 } )
-        
             .flatMap { [weak self] received in
                 Future { promise in
                     Task { [weak self] in
@@ -217,17 +216,16 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .store(in: &subs)
         
         remote
-            .map {
-                ($0, .now)
-            }
             .combineLatest(local.compactMap { $0 }
                             .merge(with: save))
-            .removeDuplicates {
-                $0.0.1 == $1.0.1
+            .compactMap { (remote: Output?,  local: Output) -> UInt32? in
+                remote == nil
+                ? local.timestamp
+                : remote!.timestamp < local.timestamp
+                    ? local.timestamp
+                    : nil
             }
-            .filter { (item: ((Output?, Date),  Output)) -> Bool in
-                item.0.0 == nil ? true : item.0.0!.timestamp < item.1.timestamp
-            }
+            .removeDuplicates()
             .map { _ in }
             .sink { [weak self] in
                 self?.push.send()
@@ -249,24 +247,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             }
                         } catch { }
                     }
-            }
-            .store(in: &subs)
-        
-        remote
-            .compactMap {
-                $0
-            }
-            .removeDuplicates {
-                $0.timestamp <= $1.timestamp
-            }
-            .sink { [weak self] model in
-                Task { [weak self] in
-                    guard
-                        let current = await self?.model.timestamp,
-                        model.timestamp > current
-                    else { return }
-                    await self?.upate(model: model)
-                }
             }
             .store(in: &subs)
         

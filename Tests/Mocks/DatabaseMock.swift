@@ -7,6 +7,7 @@ class DatabaseMock: CloudDatabase {
     var record: CKRecord?
     let saved = PassthroughSubject<CKSubscription, Never>()
     let pushed = PassthroughSubject<Void, Never>()
+    let pulled = PassthroughSubject<Void, Never>()
     
     func configured<R>(with: CKOperation.Configuration, body: (CloudDatabase) async -> R) async -> R {
         await body(self)
@@ -18,6 +19,7 @@ class DatabaseMock: CloudDatabase {
     }
     
     func record(for recordID: CKRecord.ID) async throws -> CKRecord {
+        pulled.send()
         guard let record = record else { throw NSError(domain: "", code: 1) }
         return record
     }

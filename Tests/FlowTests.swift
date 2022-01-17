@@ -192,6 +192,131 @@ final class FlowTests: XCTestCase {
             .store(in: &subs)
         
         cloud.remote.send(.init(timestamp: 2))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testRemoteCombineLocalMergeSave_RemoteNil() {
+        let expect = expectation(description: "")
+        
+        cloud.remote.send(nil)
+        
+        cloud
+            .push
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.local.send(.init(timestamp: 2))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testRemoteCombineLocalMergeSave_Local() {
+        let expect = expectation(description: "")
+        
+        cloud.remote.send(.init(timestamp: 4))
+        
+        cloud
+            .push
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.local.send(.init(timestamp: 5))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testRemoteCombineLocalMergeSave_Duplicate() {
+        let expect = expectation(description: "")
+        expect.isInverted = true
+        
+        cloud.remote.send(nil)
+        cloud.local.send(.init(timestamp: 1))
+        
+        cloud
+            .push
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.local.send(.init(timestamp: 1))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testRemoteCombineLocalMergeSave_Remote() {
+        let expect = expectation(description: "")
+        expect.isInverted = true
+        
+        cloud.remote.send(.init(timestamp: 3))
+        
+        cloud
+            .push
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.local.send(.init(timestamp: 2))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testStore() {
+        let expect = expectation(description: "")
+        
+        cloud
+            .push
+            .sink {
+                let file = try! Data(contentsOf: self.cloud.url)
+                XCTAssertFalse(file.isEmpty)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.store.send((.init(timestamp: 1), true))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testStore_NoPush() {
+        let expect = expectation(description: "")
+        expect.isInverted = true
+        
+        cloud.remote.send(.init(timestamp: 3))
+        
+        cloud
+            .push
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.store.send((.init(timestamp: 1), false))
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testPull_Throttle() {
+        let expect = expectation(description: "")
+        
+        cloud.record.send(.init(recordName: "lorem"))
+        
+        (container.database as! DatabaseMock).pulled
+            .sink {
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud.pull.send()
+        cloud.pull.send()
+        cloud.pull.send()
+        
         waitForExpectations(timeout: 1)
     }
 }
