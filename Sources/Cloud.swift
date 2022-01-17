@@ -1,6 +1,16 @@
 import CloudKit
 import Combine
 
+private let Prefix = "i"
+private let Type = "Model"
+private let Asset = "payload"
+
+#if DEBUG
+private let Suffix = ".debug.data"
+#else
+private let Suffix = ".data"
+#endif
+
 public final actor Cloud<Output>: Publisher where Output : Arch {
     public typealias Failure = Never
     
@@ -19,9 +29,14 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     public var model = Output()
     nonisolated public let ready = DispatchGroup()
     nonisolated public let pull = PassthroughSubject<Void, Failure>()
-    nonisolated let save = PassthroughSubject<Output, Failure>()
     private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
+    nonisolated let save = PassthroughSubject<Output, Failure>()
+    nonisolated let push = PassthroughSubject<Void, Failure>()
+    nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
+    nonisolated let remote = PassthroughSubject<Output?, Failure>()
+    nonisolated let local = PassthroughSubject<Output?, Failure>()
+    nonisolated let record = PassthroughSubject<CKRecord.ID, Failure>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
     public var notified: Bool {
@@ -50,20 +65,10 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     }
     
     private func load(_ identifier: String) async {
-        let push = PassthroughSubject<Void, Failure>()
-        let store = PassthroughSubject<(Output, Bool), Failure>()
-        let remote = PassthroughSubject<Output?, Failure>()
-        let local = PassthroughSubject<Output?, Failure>()
-        let record = PassthroughSubject<CKRecord.ID, Failure>()
-        
         let container = CKContainer(identifier: identifier)
         let database = container.publicCloudDatabase
         
-        let prefix = "i"
-        let type = "Model"
-        let asset = "payload"
-        
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(type + suffix)
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
         url.exclude()
         
         let config = CKOperation.Configuration()
@@ -76,7 +81,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 Task {
                     await database.configuredWith(configuration: config) { base in
                         let subscription = CKQuerySubscription(
-                            recordType: type,
+                            recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate])
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
@@ -100,7 +105,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                             promise(.success(nil))
                             return
                         }
-                        promise(.success(.init(recordName: prefix + user.recordName)))
+                        promise(.success(.init(recordName: Prefix + user.recordName)))
                     }
                 }
             }
@@ -165,7 +170,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                     let result = await database.configuredWith(configuration: config) { base -> Output? in
                         guard
                             let record = try? await base.record(for: id),
-                            let asset = record[asset] as? CKAsset,
+                            let asset = record[Asset] as? CKAsset,
                             let fileURL = asset.fileURL,
                             let data = try? Data(contentsOf: fileURL)
                         else {
@@ -173,7 +178,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         }
                         return await .prototype(data: data)
                     }
-                    remote.send(result)
+                    self.remote.send(result)
                 }
             }
             .store(in: &subs)
@@ -186,8 +191,8 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .sink { id in
                 Task {
                     await database.configuredWith(configuration: config) { base in
-                        let record = CKRecord(recordType: type, recordID: id)
-                        record[asset] = CKAsset(fileURL: url)
+                        let record = CKRecord(recordType: Type, recordID: id)
+                        record[Asset] = CKAsset(fileURL: url)
                         _ = try? await base.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
                     }
                 }
@@ -245,7 +250,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                         do {
                             try data.write(to: url, options: .atomic)
                             if storing.1 {
-                                push.send()
+                                self.push.send()
                             }
                         } catch { }
                     }
@@ -317,9 +322,3 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
     }
 }
-
-#if DEBUG
-private let suffix = ".debug.data"
-#else
-private let suffix = ".data"
-#endif
