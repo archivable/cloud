@@ -182,6 +182,78 @@ final class FlowTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
+    func testFirstTime() {
+        let expectCloud = expectation(description: "cloud")
+        
+        let expectStore = expectation(description: "store")
+        expectStore.isInverted = true
+        
+        let expectPush = expectation(description: "push")
+        expectPush.isInverted = true
+        
+        cloud
+            .sink {
+                XCTAssertEqual(0, $0.timestamp)
+                expectCloud.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .store
+            .sink { _ in
+                expectStore.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .push
+            .sink { _ in
+                expectPush.fulfill()
+            }
+            .store(in: &subs)
+        
+        waitForExpectations(timeout: 1)
+    }
+    
+    func testLoad() async {
+        let expectCloud = expectation(description: "cloud")
+        
+        let expectStore = expectation(description: "store")
+        expectStore.isInverted = true
+        
+        let expectPush = expectation(description: "push")
+        expectPush.isInverted = true
+        
+        cloud = .init()
+        try! await Archive(timestamp: 1).compressed.write(to: cloud.url)
+        
+        cloud
+            .dropFirst()
+            .sink {
+                XCTAssertEqual(1, $0.timestamp)
+                expectCloud.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .store
+            .sink { _ in
+                expectStore.fulfill()
+            }
+            .store(in: &subs)
+        
+        cloud
+            .push
+            .sink {
+                expectPush.fulfill()
+            }
+            .store(in: &subs)
+        
+        await cloud.load(container: container)
+        
+        await waitForExpectations(timeout: 1)
+    }
+    
     func testRemoteSmallerThanLocal() async {
         let expectCloud = expectation(description: "")
         expectCloud.isInverted = true

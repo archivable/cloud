@@ -66,7 +66,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         synch()
         
         if let data = try? Data(contentsOf: url) {
-            upate(model: await .prototype(data: data))
+            let output: Output = await .prototype(data: data)
+            upate(model: output)
+            await publish(model: output)
         }
         
         ready.leave()
