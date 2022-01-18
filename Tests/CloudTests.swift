@@ -16,10 +16,10 @@ final class CloudTests: XCTestCase {
         let date = Date()
         
         cloud
-            .save
+            .store
             .sink {
-                XCTAssertEqual(1, $0.counter)
-                XCTAssertGreaterThanOrEqual($0.timestamp, date.timestamp)
+                XCTAssertEqual(1, $0.0.counter)
+                XCTAssertGreaterThanOrEqual($0.0.timestamp, date.timestamp)
                 expect.fulfill()
             }
             .store(in: &subs)

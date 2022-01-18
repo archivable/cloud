@@ -28,11 +28,9 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
     private(set) var contracts = [Contract]()
     private var subs = Set<AnyCancellable>()
     nonisolated let url: URL
-    nonisolated let save = PassthroughSubject<Output, Failure>()
     nonisolated let push = PassthroughSubject<Void, Failure>()
-    nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
     nonisolated let remote = PassthroughSubject<Output?, Failure>()
-    nonisolated let local = PassthroughSubject<Output?, Failure>()
+    nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
     nonisolated let record = PassthroughSubject<CKRecord.ID, Failure>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
@@ -62,14 +60,65 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
-    deinit {
-        Swift.print("cloud gone")
+    func load(container: CloudContainer) async {
+        url.exclude()
+        login(container: container)
+        synch()
+        
+        if let data = try? Data(contentsOf: url) {
+            upate(model: await .prototype(data: data))
+        }
+        
+        ready.leave()
     }
     
-    func load(container: CloudContainer) async {
+    public func stream() async {
+        model.timestamp = .now
         
-        url.exclude()
+        contracts = contracts
+            .filter {
+                $0.sub?.subscriber != nil
+            }
         
+        await publish(model: model)
+        
+        store.send((model, true))
+    }
+    
+    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
+        let sub = Sub(subscriber: .init(subscriber))
+        subscriber.receive(subscription: sub)
+        
+        Task {
+            await store(contract: .init(sub: sub))
+        }
+    }
+    
+    func upate(model: Output) {
+        self.model = model
+    }
+    
+    private func store(contract: Contract) async {
+        contracts.append(contract)
+        let initial = model
+        await MainActor
+            .run {
+                _ = contract.sub?.subscriber?.receive(initial)
+            }
+    }
+    
+    private func publish(model: Output) async {
+        let subscribers = contracts.compactMap(\.sub?.subscriber)
+        await MainActor
+            .run {
+                subscribers
+                    .forEach {
+                        _ = $0.receive(model)
+                    }
+            }
+    }
+    
+    private func login(container: CloudContainer) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
         config.timeoutIntervalForResource = 13
@@ -114,42 +163,6 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .first()
             .sink { [weak self] in
                 self?.record.send($0)
-            }
-            .store(in: &subs)
-        
-        save
-            .map {
-                ($0, true)
-            }
-            .sink { [weak self] in
-                self?.store.send($0)
-            }
-            .store(in: &subs)
-        
-        local.compactMap { $0 }
-            .merge(with: remote.compactMap { $0 } )
-            .flatMap { [weak self] received in
-                Future { promise in
-                    Task { [weak self] in
-                        guard
-                            let current = await self?.model.timestamp,
-                            received.timestamp > current
-                        else {
-                            promise(.success(nil))
-                            return
-                        }
-                        promise(.success(received))
-                    }
-                }
-            }
-            .compactMap {
-                $0
-            }
-            .sink { [weak self] (model: Output) in
-                Task { [weak self] in
-                    await self?.upate(model: model)
-                    await self?.publish(model: model)
-                }
             }
             .store(in: &subs)
         
@@ -200,34 +213,66 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                 }
             }
             .store(in: &subs)
-        
-        local
-            .merge(with: save.map { $0 as Output? })
-            .combineLatest(remote.compactMap { $0 })
-            .filter {
-                $0.0 == nil ? true : $0.0!.timestamp < $0.1.timestamp
+    }
+    
+    private func synch() {
+        remote
+            .compactMap { $0 }
+            .flatMap { [weak self] output in
+                Future { [weak self] promise in
+                    Task { [weak self] in
+                        guard
+                            let current = await self?.model.timestamp,
+                            output.timestamp > current
+                        else {
+                            promise(.success(nil))
+                            return
+                        }
+                        promise(.success(output))
+                    }
+                }
             }
-            .map {
-                ($1, false)
+            .compactMap {
+                $0
             }
-            .sink { [weak self] in
-                self?.store.send($0)
+            .sink { [weak self] (model: Output) in
+                Task { [weak self] in
+                    await self?.upate(model: model)
+                    await self?.publish(model: model)
+                    self?.store.send((model, false))
+                }
             }
             .store(in: &subs)
         
         remote
-            .combineLatest(local.compactMap { $0 }
-                            .merge(with: save))
-            .compactMap { (remote: Output?,  local: Output) -> UInt32? in
-                remote == nil
-                ? local.timestamp
-                : remote!.timestamp < local.timestamp
-                    ? local.timestamp
-                    : nil
+            .filter {
+                $0 == nil
             }
-            .removeDuplicates()
-            .map { _ in }
-            .sink { [weak self] in
+            .sink { [weak self] _ in
+                self?.push.send()
+            }
+            .store(in: &subs)
+        
+        remote
+            .compactMap { $0 }
+            .flatMap { [weak self] output in
+                Future { [weak self] promise in
+                    Task { [weak self] in
+                        guard
+                            let current = await self?.model.timestamp,
+                            output.timestamp < current
+                        else {
+                            promise(.success(false))
+                            return
+                        }
+                        promise(.success(true))
+                    }
+                }
+            }
+            .filter {
+                $0
+            }
+            .sink { [weak self] _ in
                 self?.push.send()
             }
             .store(in: &subs)
@@ -249,60 +294,5 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
                     }
             }
             .store(in: &subs)
-        
-        if let data = try? Data(contentsOf: url) {
-            upate(model: await .prototype(data: data))
-            local.send(model)
-        } else {
-            local.send(model)
-        }
-        
-        ready.leave()
-    }
-    
-    public func stream() async {
-        model.timestamp = .now
-        
-        contracts = contracts
-            .filter {
-                $0.sub?.subscriber != nil
-            }
-        
-        await publish(model: model)
-        
-        save.send(model)
-    }
-    
-    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
-        let sub = Sub(subscriber: .init(subscriber))
-        subscriber.receive(subscription: sub)
-        
-        Task {
-            await store(contract: .init(sub: sub))
-        }
-    }
-    
-    func upate(model: Output) {
-        self.model = model
-    }
-    
-    private func store(contract: Contract) async {
-        contracts.append(contract)
-        let initial = model
-        await MainActor
-            .run {
-                _ = contract.sub?.subscriber?.receive(initial)
-            }
-    }
-    
-    private func publish(model: Output) async {
-        let subscribers = contracts.compactMap(\.sub?.subscriber)
-        await MainActor
-            .run {
-                subscribers
-                    .forEach {
-                        _ = $0.receive(model)
-                    }
-            }
     }
 }
