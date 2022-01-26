@@ -280,7 +280,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             .store(in: &subs)
         
         store
-            .debounce(for: .milliseconds(500), scheduler: queue)
+            .debounce(for: .milliseconds(250), scheduler: queue)
             .sink { [weak self] storing in
                 Task
                     .detached(priority: .userInitiated) { [weak self] in
