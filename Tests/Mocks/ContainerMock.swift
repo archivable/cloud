@@ -7,6 +7,10 @@ class ContainerMock: CloudContainer {
     var status = CKAccountStatus.noAccount
     var id = "lorem"
     
+    required init(identifier: String) {
+        
+    }
+    
     func accountStatus() async throws -> CKAccountStatus {
         status
     }

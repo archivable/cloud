@@ -5,11 +5,11 @@ import CloudKit
 
 final class FlowTests: XCTestCase {
     private var container: ContainerMock!
-    private var cloud: Cloud<Archive>!
+    private var cloud: Cloud<Archive, ContainerMock>!
     private var subs: Set<AnyCancellable>!
     
     override func setUp() async throws {
-        container = .init()
+        container = .init(identifier: "")
         cloud = .init()
         try? FileManager.default.removeItem(at: cloud.url)
         await cloud.load(container: container)

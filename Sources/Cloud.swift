@@ -11,13 +11,13 @@ private let Suffix = ".debug.data"
 private let Suffix = ".data"
 #endif
 
-public final actor Cloud<Output>: Publisher where Output : Arch {
+public final actor Cloud<Output, Container>: Publisher where Output : Arch, Container : CloudContainer {
     public typealias Failure = Never
     
     public static func new(identifier: String) -> Self {
         let cloud = Self()
         Task {
-            await cloud.load(container: CKContainer(identifier: identifier))
+            await cloud.load(container: Container(identifier: identifier))
         }
         return cloud
     }
@@ -60,7 +60,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
-    func load(container: CloudContainer) async {
+    func load(container: Container) async {
         url.exclude()
         login(container: container)
         synch()
@@ -120,7 +120,7 @@ public final actor Cloud<Output>: Publisher where Output : Arch {
             }
     }
     
-    private func login(container: CloudContainer) {
+    private func login(container: Container) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
         config.timeoutIntervalForResource = 13
