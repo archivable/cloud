@@ -1,9 +1,8 @@
 import Foundation
 import CloudKit
-@testable import Archivable
 
-class ContainerMock: CloudContainer {
-    var database = DatabaseMock()
+class MockContainer: CloudContainer {
+    var database = MockDatabase()
     var status = CKAccountStatus.noAccount
     var id = "lorem"
     

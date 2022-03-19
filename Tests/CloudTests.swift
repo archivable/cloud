@@ -3,7 +3,7 @@ import Combine
 @testable import Archivable
 
 final class CloudTests: XCTestCase {
-    private var cloud: Cloud<Archive, ContainerMock>!
+    private var cloud: Cloud<Archive, MockContainer>!
     private var subs: Set<AnyCancellable>!
     
     override func setUp() {

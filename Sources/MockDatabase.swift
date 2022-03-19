@@ -1,9 +1,8 @@
 import Foundation
 import CloudKit
 import Combine
-@testable import Archivable
 
-class DatabaseMock: CloudDatabase {
+class MockDatabase: CloudDatabase {
     var record: CKRecord?
     let saved = PassthroughSubject<CKSubscription, Never>()
     let pushed = PassthroughSubject<Void, Never>()
