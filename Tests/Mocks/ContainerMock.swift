@@ -3,7 +3,7 @@ import CloudKit
 @testable import Archivable
 
 class ContainerMock: CloudContainer {
-    var database: CloudDatabase = DatabaseMock()
+    var database = DatabaseMock()
     var status = CKAccountStatus.noAccount
     var id = "lorem"
     

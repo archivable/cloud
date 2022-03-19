@@ -23,7 +23,7 @@ final class FlowTests: XCTestCase {
     func testSubscription() {
         let expect = expectation(description: "")
         
-        (container.database as! DatabaseMock)
+        container.database
             .saved
             .sink {
                 let query = $0 as? CKQuerySubscription
@@ -126,7 +126,7 @@ final class FlowTests: XCTestCase {
         
         cloud.record.send(.init(recordName: "lorem"))
         
-        (container.database as! DatabaseMock).pushed
+        container.database.pushed
             .sink {
                 expect.fulfill()
             }
@@ -144,7 +144,7 @@ final class FlowTests: XCTestCase {
         let asset = CKAsset(fileURL: remote)
         let record = CKRecord(recordType: "lorem")
         record["payload"] = asset
-        (container.database as! DatabaseMock).record = record
+        container.database.record = record
         
         cloud
             .remote
@@ -169,7 +169,7 @@ final class FlowTests: XCTestCase {
         
         cloud.record.send(.init(recordName: "lorem"))
         
-        (container.database as! DatabaseMock).pulled
+        container.database.pulled
             .sink {
                 expect.fulfill()
             }

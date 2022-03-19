@@ -1,7 +1,7 @@
 import CloudKit
 
 extension CKContainer: CloudContainer {
-    public var database: CloudDatabase {
+    public var database: CKDatabase {
         publicCloudDatabase
     }
 }

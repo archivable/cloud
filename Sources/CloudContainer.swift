@@ -1,7 +1,8 @@
 import CloudKit
 
 public protocol CloudContainer {
-    var database: CloudDatabase { get }
+    associatedtype Database : CloudDatabase
+    var database: Database { get }
     
     init(identifier: String)
     func accountStatus() async throws -> CKAccountStatus
