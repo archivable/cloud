@@ -120,8 +120,6 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
     }
     
-    private var asd: CKSubscription?
-    
     private func login(container: Container) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
@@ -135,15 +133,10 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         let subscription = CKQuerySubscription(
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate, .firesOnRecordDeletion])
+                            options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
                         subscription.notificationInfo = .init(shouldBadge: true, shouldSendContentAvailable: true)
 
-                        do {
-                            self.asd = try await base.save(subscription)
-                            Swift.print("saved subs")
-                        } catch (let error) {
-                            Swift.print("error subs \(error)")
-                        }
+                        _ = try? await base.save(subscription)
                     }
                 }
             }
