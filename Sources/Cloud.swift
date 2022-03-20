@@ -120,6 +120,8 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
     }
     
+    private var asd: CKSubscription?
+    
     private func login(container: Container) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
@@ -137,7 +139,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
 
                         do {
-                            _ = try await base.save(subscription)
+                            self.asd = try await base.save(subscription)
                             Swift.print("saved subs")
                         } catch (let error) {
                             Swift.print("error subs \(error)")
