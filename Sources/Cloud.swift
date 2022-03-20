@@ -135,8 +135,8 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         let subscription = CKQuerySubscription(
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                            options: [.firesOnRecordUpdate, .firesOnRecordDeletion])
+                        subscription.notificationInfo = .init(shouldBadge: true, shouldSendContentAvailable: true)
 
                         do {
                             self.asd = try await base.save(subscription)
