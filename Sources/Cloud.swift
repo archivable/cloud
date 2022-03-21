@@ -134,7 +134,8 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
-                        subscription.notificationInfo = .init(shouldBadge: true, shouldSendContentAvailable: true)
+                        subscription.notificationInfo = .init(alertBody: id.recordName,
+                                                              shouldSendContentAvailable: true)
 
                         _ = try? await base.save(subscription)
                     }
