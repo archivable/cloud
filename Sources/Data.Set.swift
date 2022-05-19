@@ -77,4 +77,10 @@ extension Data {
             .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: MemoryLayout<I>.size)
         }
     }
+    
+    public func adding<I>(_ number: I) -> Self where I : BinaryFloatingPoint {
+        self + Swift.withUnsafeBytes(of: number) {
+            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: MemoryLayout<I>.size)
+        }
+    }
 }

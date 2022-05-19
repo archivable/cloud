@@ -130,6 +130,13 @@ final class DataTests: XCTestCase {
         XCTAssertEqual(Int(100), data2.number())
     }
     
+    func testDouble() {
+        let original = Double(12398765.4567890155666)
+        var data = Data().adding(original)
+        XCTAssertEqual(8, data.count)
+        XCTAssertEqual(original, data.number())
+    }
+    
     func testStringCollection() {
         let strings = ["hello", "world"]
         var data = Data()

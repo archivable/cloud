@@ -85,6 +85,14 @@ extension Data {
         return result
     }
     
+    public mutating func number<I>() -> I where I : BinaryFloatingPoint {
+        let result = withUnsafeBytes {
+            $0.baseAddress!.bindMemory(to: I.self, capacity: 1)[0]
+        }
+        self = removing(MemoryLayout<I>.size)
+        return result
+    }
+    
     private mutating func removing(_ amount: Int) -> Self {
         count > amount ? advanced(by: amount) : .init()
     }
