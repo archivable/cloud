@@ -28,7 +28,7 @@ extension Data {
             .adding(collection.flatMap(\.data))
     }
     
-    public func adding<I, C>(size: I.Type, collection: C) -> Self where C : Collection, C.Element : BinaryInteger, I : UnsignedInteger {
+    public func adding<I, C>(size: I.Type, collection: C) -> Self where C : Collection, C.Element : Numeric, I : UnsignedInteger {
         collection
             .reduce(adding(I(collection.count))) {
                 $0
@@ -72,13 +72,7 @@ extension Data {
         self + [bool ? 1 : 0]
     }
     
-    public func adding<I>(_ number: I) -> Self where I : BinaryInteger {
-        self + Swift.withUnsafeBytes(of: number) {
-            .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: MemoryLayout<I>.size)
-        }
-    }
-    
-    public func adding<I>(_ number: I) -> Self where I : BinaryFloatingPoint {
+    public func adding<I>(_ number: I) -> Self where I : Numeric {
         self + Swift.withUnsafeBytes(of: number) {
             .init(bytes: $0.bindMemory(to: UInt8.self).baseAddress!, count: MemoryLayout<I>.size)
         }

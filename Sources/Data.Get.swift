@@ -40,7 +40,7 @@ extension Data {
             }
     }
     
-    public mutating func collection<I, B>(size: I.Type) -> [B] where I : UnsignedInteger, B : BinaryInteger {
+    public mutating func collection<I, N>(size: I.Type) -> [N] where I : UnsignedInteger, N : Numeric {
         (0 ..< .init(number() as I))
             .map { _ in
                 number()
@@ -77,15 +77,7 @@ extension Data {
         removeFirst() == 1
     }
     
-    public mutating func number<I>() -> I where I : BinaryInteger {
-        let result = withUnsafeBytes {
-            $0.baseAddress!.bindMemory(to: I.self, capacity: 1)[0]
-        }
-        self = removing(MemoryLayout<I>.size)
-        return result
-    }
-    
-    public mutating func number<I>() -> I where I : BinaryFloatingPoint {
+    public mutating func number<I>() -> I where I : Numeric {
         let result = withUnsafeBytes {
             $0.baseAddress!.bindMemory(to: I.self, capacity: 1)[0]
         }
