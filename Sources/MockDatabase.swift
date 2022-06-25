@@ -27,4 +27,8 @@ class MockDatabase: CloudDatabase {
         pushed.send()
         return ([:], [:])
     }
+    
+    func allSubscriptions() async throws -> [CKSubscription] {
+        []
+    }
 }
