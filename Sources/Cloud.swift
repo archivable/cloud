@@ -138,6 +138,10 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
 
                         do {
                             let subss = try await base.save(subscription)
+                            let all = try await base.allSubscriptions()
+                            
+                            Swift.print(all.contains(subss))
+                            Swift.print(all.count)
                         } catch {
                             Swift.print("error subss")
                             Swift.print(error)
