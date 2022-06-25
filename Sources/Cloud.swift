@@ -148,10 +148,14 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                                     query.notificationInfo == subscription.notificationInfo,
                                     query.predicate == subscription.predicate
                                 else {
+                                    let query = old as? CKQuerySubscription
+                                    Swift.print(query)
+                                    Swift.print(old.notificationInfo == subscription.notificationInfo)
+                                    Swift.print(query?.predicate == subscription.predicate)
                                     let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
                                     Swift.print("deleted \(deleted)")
                                     counter -= 1
-                                    return
+                                    continue
                                 }
                             }
                             
