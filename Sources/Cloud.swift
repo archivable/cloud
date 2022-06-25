@@ -136,7 +136,12 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
 
-                        _ = try? await base.save(subscription)
+                        do {
+                            let subss = try await base.save(subscription)
+                        } catch {
+                            Swift.print("error subss")
+                            Swift.print(error)
+                        }
                     }
                 }
             }
