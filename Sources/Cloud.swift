@@ -140,11 +140,11 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         do {
                             let all = try await base.allSubscriptions()
                             var counter = all.count
+                            Swift.print(counter)
                             
                             for old in all {
                                 guard
                                     let query = old as? CKQuerySubscription,
-                                    query.subscriptionType == subscription.subscriptionType,
                                     query.notificationInfo == subscription.notificationInfo,
                                     query.predicate == subscription.predicate
                                 else {
