@@ -130,6 +130,20 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             .sink { id in
                 Task {
                     await container.database.configured(with: config) { base in
+                        
+                        do {
+                            let all = try await base.allSubscriptions()
+                            
+                            for s in all {
+                                let x = try await base.deleteSubscription(withID: s.subscriptionID)
+                                Swift.print("delete \(x)")
+                            }
+                            
+                        } catch {
+                            Swift.print("all error")
+                            Swift.print(error)
+                        }
+                        
                         let subscription = CKQuerySubscription(
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
@@ -139,9 +153,9 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         do {
                             let subss = try await base.save(subscription)
                             let all = try await base.allSubscriptions()
-                            
+
+                            Swift.print(subss.subscriptionID)
                             Swift.print(all.contains(subss))
-                            
                             Swift.print(all.count)
                             Swift.print(all.map(\.subscriptionID))
                         } catch {

@@ -31,4 +31,8 @@ class MockDatabase: CloudDatabase {
     func allSubscriptions() async throws -> [CKSubscription] {
         []
     }
+    
+    func deleteSubscription(withID subscriptionID: CKSubscription.ID) async throws -> CKSubscription.ID {
+        subscriptionID
+    }
 }
