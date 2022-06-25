@@ -131,35 +131,40 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                 Task {
                     await container.database.configured(with: config) { base in
                         
-                        do {
-                            let all = try await base.allSubscriptions()
-                            
-                            for s in all {
-                                let x = try await base.deleteSubscription(withID: s.subscriptionID)
-                                Swift.print("delete \(x)")
-                            }
-                            
-                        } catch {
-                            Swift.print("all error")
-                            Swift.print(error)
-                        }
-                        
                         let subscription = CKQuerySubscription(
                             recordType: Type,
                             predicate: .init(format: "recordID = %@", id),
                             options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-
+                        
                         do {
-                            let subss = try await base.save(subscription)
                             let all = try await base.allSubscriptions()
+                            var counter = all.count
+                            
+                            for old in all {
+                                guard
+                                    let query = old as? CKQuerySubscription,
+                                    query.subscriptionType == subscription.subscriptionType,
+                                    query.notificationInfo == subscription.notificationInfo,
+                                    query.predicate == subscription.predicate
+                                else {
+                                    let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
+                                    Swift.print("deleted \(deleted)")
+                                    counter -= 1
+                                    return
+                                }
+                            }
+                            
+                            if counter < 1 {
+                                let subss = try await base.save(subscription)
 
-                            Swift.print(subss.subscriptionID)
-                            Swift.print(all.contains(subss))
-                            Swift.print(all.count)
-                            Swift.print(all.map(\.subscriptionID))
+                                Swift.print(subss.subscriptionID)
+                            } else {
+                                Swift.print("still working")
+                            }
+                            
                         } catch {
-                            Swift.print("error subss")
+                            Swift.print("all error")
                             Swift.print(error)
                         }
                     }
