@@ -145,8 +145,10 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             for old in all {
                                 guard
                                     let query = old as? CKQuerySubscription,
-                                    query.notificationInfo == subscription.notificationInfo,
-                                    query.predicate == subscription.predicate
+                                    query.notificationInfo?.shouldSendContentAvailable == subscription.notificationInfo?.shouldSendContentAvailable,
+                                    query.notificationInfo?.shouldBadge == subscription.notificationInfo?.shouldBadge,
+                                    query.notificationInfo?.alertBody == subscription.notificationInfo?.alertBody,
+                                    query.predicate.predicateFormat == subscription.predicate.predicateFormat
                                 else {
                                     let query = old as? CKQuerySubscription
                                     Swift.print(query)
