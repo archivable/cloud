@@ -139,10 +139,11 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         
                         do {
                             let all = try await base.allSubscriptions()
-                            var counter = all.count
-                            Swift.print(counter)
+                            var cleaned = [CKQuerySubscription]()
+                            Swift.print(all.count)
                             
-                            for old in all {
+                            for index in 0 ..< all.count {
+                                let old = all[index]
                                 guard
                                     let query = old as? CKQuerySubscription,
                                     query.notificationInfo?.shouldSendContentAvailable == subscription.notificationInfo?.shouldSendContentAvailable,
@@ -155,14 +156,20 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                                     Swift.print(query?.predicate.predicateFormat)
                                     let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
                                     Swift.print("deleted \(deleted)")
-                                    counter -= 1
                                     continue
                                 }
+                                cleaned.append(query)
                             }
                             
-                            #warning("if more than 1 then remove all")
+                            if cleaned.count > 1 {
+                                for old in cleaned {
+                                    let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
+                                    Swift.print("cleaned deleted \(deleted)")
+                                }
+                                cleaned = []
+                            }
                             
-                            if counter < 1 {
+                            if cleaned.isEmpty {
                                 let subss = try await base.save(subscription)
 
                                 Swift.print(subss.subscriptionID)
