@@ -21,16 +21,15 @@ struct Wrapper<A> where A : Arch {
     }
     
     init(data: Data) async {
-        var data = data
-        if A.version > 2 {
-            version = data.removeFirst()
-            timestamp = data.number()
-            self.data = data
-        } else {
-            var data = await data.decompressed
+        if var data = try? await data.decompress {
             version = data.removeFirst()
             timestamp = data.number()
             self.data = await data.compressed
+        } else {
+            var data = data
+            version = data.removeFirst()
+            timestamp = data.number()
+            self.data = data
         }
     }
     

@@ -4,11 +4,10 @@ import XCTest
 final class WrapperTests: XCTestCase {
     func testTimestamp() async {
         let archive = Archive(timestamp: 123, counter: 5)
-        let now = UInt32.now
         let wrapper = await Wrapper<Archive>(archive: archive)
         let compressed = wrapper.compressed
         let uncompressed = await Wrapper<Archive>(data: compressed).timestamp
-        XCTAssertGreaterThanOrEqual(uncompressed, now)
+        XCTAssertEqual(uncompressed, 123)
     }
     
     func testUnwrap() async {
@@ -35,7 +34,7 @@ private struct A1: Arch {
             await
                 .init()
                 .adding(Self.version)
-                .adding(UInt32.now)
+                .adding(timestamp)
                 .adding(data)
                 .compressed
         }

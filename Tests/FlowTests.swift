@@ -336,11 +336,11 @@ final class FlowTests: XCTestCase {
         await waitForExpectations(timeout: 1)
     }
     
-    func testNoLocalButRemote() async {
+    func testNoLocalButRemote() {
         let expectCloud = expectation(description: "cloud")
         
         let expectStore = expectation(description: "store")
-        
+
         let expectPush = expectation(description: "push")
         expectPush.isInverted = true
         
@@ -356,7 +356,7 @@ final class FlowTests: XCTestCase {
             .store
             .sink {
                 XCTAssertEqual(3, $0.0.timestamp)
-                
+
                 Task {
                     let result = await self.cloud.model.timestamp
                     XCTAssertEqual(3, result)
@@ -364,7 +364,7 @@ final class FlowTests: XCTestCase {
                 }
             }
             .store(in: &subs)
-        
+
         cloud
             .push
             .sink {
@@ -372,9 +372,11 @@ final class FlowTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
+        Task {
+            await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
+        }
         
-        await waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 1)
     }
     
     func testLocalSmallerThanRemote() {
@@ -477,11 +479,13 @@ final class FlowTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
     
-    func testStoreNoPush() async {
+    func testStoreNoPush() {
         let expect = expectation(description: "")
         expect.isInverted = true
         
-        await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
+        Task {
+            await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
+        }
         
         cloud
             .push
@@ -492,6 +496,6 @@ final class FlowTests: XCTestCase {
         
         cloud.store.send((.init(timestamp: 1), false))
         
-        await waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 1)
     }
 }

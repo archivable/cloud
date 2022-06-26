@@ -15,6 +15,16 @@ extension Data {
         }
     }
     
+    public var decompress: Self {
+        get async throws {
+            try await Task
+                .detached(priority: .utility) {
+                    try (self as NSData).decompressed(using: .lzfse) as Self
+                }
+                .value
+        }
+    }
+    
     public func prototype<P>() -> P where P : Storable {
         var mutating = self
         return .init(data: &mutating)
