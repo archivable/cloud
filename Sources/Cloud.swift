@@ -133,7 +133,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         
                         let subscription = CKQuerySubscription(
                             recordType: Type,
-                            predicate: .init(format: "recordID = %@", id),
+                            predicate: .init(format: "recordID = ", id),
                             options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
                         subscription.notificationInfo = .init(shouldSendContentAvailable: true)
                         
