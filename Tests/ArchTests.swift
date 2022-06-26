@@ -15,8 +15,4 @@ final class ArchTests: XCTestCase {
         XCTAssertEqual(99, parsed.counter)
         XCTAssertEqual(123, parsed.timestamp)
     }
-    
-    func testVersion() {
-        XCTAssertGreaterThanOrEqual(Archive.version, 3)
-    }
 }
