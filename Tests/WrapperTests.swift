@@ -41,7 +41,8 @@ private struct A1: Arch {
         }
     }
     
-    var string: String
+    let string: String
+    let timestamp: UInt32
     
     var data: Data {
         get async {
@@ -53,17 +54,19 @@ private struct A1: Arch {
     init(version: UInt8, timestamp: UInt32, data: Data) async {
         var data = data
         string = data.string(size: UInt32.self)
+        self.timestamp = timestamp
     }
     
     init() {
         string = "hello world\nlorem ipsum"
+        timestamp = .now
     }
 }
 
 private struct A2: Arch {
     static var version = UInt8(3)
     
-    var string: String
+    let string: String
     
     var data: Data {
         get async {
@@ -72,12 +75,16 @@ private struct A2: Arch {
         }
     }
     
+    let timestamp: UInt32
+    
     init(version: UInt8, timestamp: UInt32, data: Data) async {
         var data = data
         string = data.string(size: UInt32.self)
+        self.timestamp = timestamp
     }
     
     init() {
         string = "hello world\nlorem ipsum"
+        timestamp = .now
     }
 }

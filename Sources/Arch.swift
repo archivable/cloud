@@ -12,6 +12,6 @@ public protocol Arch {
 
 extension Arch {
     public static var version: UInt8 {
-        .init()
+        3
     }
 }

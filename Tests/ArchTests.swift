@@ -11,13 +11,12 @@ final class ArchTests: XCTestCase {
     func testCompress() async {
         archive.counter = 99
         archive.timestamp = 123
-        let parsed = await Archive.prototype(data: archive.compressed)
+        let parsed = await Archive(version: 3, timestamp: 123, data: archive.data)
         XCTAssertEqual(99, parsed.counter)
         XCTAssertEqual(123, parsed.timestamp)
     }
     
-    func testVersion() async {
-        let version = await archive.compressed.decompressed.first
-        XCTAssertEqual(128, version)
+    func testVersion() {
+        XCTAssertGreaterThanOrEqual(Archive.version, 3)
     }
 }
