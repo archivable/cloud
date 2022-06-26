@@ -75,6 +75,8 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     }
     
     public func stream() async {
+        model.timestamp = .now
+        
         contracts = contracts
             .filter {
                 $0.sub?.subscriber != nil

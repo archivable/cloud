@@ -14,14 +14,10 @@ struct Wrapper<A> where A : Arch {
     }
     
     var compressed: Data {
-        get async {
-            await
-                .init()
-                .adding(A.version)
-                .adding(UInt32.now)
-                .adding(data)
-                .compressed
-        }
+        .init()
+        .adding(A.version)
+        .adding(timestamp)
+        .adding(data)
     }
     
     init(data: Data) async {
@@ -40,8 +36,8 @@ struct Wrapper<A> where A : Arch {
     
     init(archive: A) async {
         version = A.version
-        timestamp = .now
-        await data = archive.data
+        timestamp = archive.timestamp
+        await data = archive.data.compressed
     }
 }
 

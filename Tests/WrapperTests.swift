@@ -6,7 +6,7 @@ final class WrapperTests: XCTestCase {
         let archive = Archive(timestamp: 123, counter: 5)
         let now = UInt32.now
         let wrapper = await Wrapper<Archive>(archive: archive)
-        let compressed = await wrapper.compressed
+        let compressed = wrapper.compressed
         let uncompressed = await Wrapper<Archive>(data: compressed).timestamp
         XCTAssertGreaterThanOrEqual(uncompressed, now)
     }
@@ -41,8 +41,8 @@ private struct A1: Arch {
         }
     }
     
+    var timestamp: UInt32
     let string: String
-    let timestamp: UInt32
     
     var data: Data {
         get async {
@@ -66,6 +66,7 @@ private struct A1: Arch {
 private struct A2: Arch {
     static var version = UInt8(3)
     
+    var timestamp: UInt32
     let string: String
     
     var data: Data {
@@ -74,8 +75,6 @@ private struct A2: Arch {
             .adding(size: UInt32.self, string: string)
         }
     }
-    
-    let timestamp: UInt32
     
     init(version: UInt8, timestamp: UInt32, data: Data) async {
         var data = data

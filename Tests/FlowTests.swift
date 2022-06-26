@@ -234,21 +234,21 @@ final class FlowTests: XCTestCase {
                 expectCloud.fulfill()
             }
             .store(in: &subs)
-        
+
         cloud
             .store
             .sink { _ in
                 expectStore.fulfill()
             }
             .store(in: &subs)
-        
+
         cloud
             .push
             .sink {
                 expectPush.fulfill()
             }
             .store(in: &subs)
-        
+
         await cloud.load(container: container)
         
         await waitForExpectations(timeout: 1)
