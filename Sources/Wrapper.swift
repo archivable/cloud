@@ -1,6 +1,6 @@
 import Foundation
 
-struct Wrapper<A>: Storable where A : Arch {
+struct Wrapper<A> where A : Arch {
     let version: UInt8
     let timestamp: UInt32
     let data: Data
@@ -18,14 +18,23 @@ struct Wrapper<A>: Storable where A : Arch {
             await
                 .init()
                 .adding(A.version)
-                .adding(timestamp)
+                .adding(UInt32.now)
                 .adding(data)
                 .compressed
         }
     }
     
-    init(data: inout Data) {
-        
+    init(data: inout Data) async {
+        if A.version > 2 {
+            version = data.removeFirst()
+            timestamp = data.number()
+            self.data = data
+        } else {
+            var data = await data.decompressed
+            version = data.removeFirst()
+            timestamp = data.number()
+            self.data = await data.compressed
+        }
     }
     
     init(archive: A) async {
@@ -38,16 +47,5 @@ struct Wrapper<A>: Storable where A : Arch {
 extension Wrapper {
     public static var version: UInt8 {
         .init()
-    }
-    
-    init(data: Data) async {
-        var data = await data
-            .decompressed
-        
-        if Self.version == data.removeFirst() {
-            self.init(timestamp: data.number(), raw: data.unwrap(size: UInt32.self))
-        } else {
-            self.init(timestamp: .now, raw: .init())
-        }
     }
 }
