@@ -29,7 +29,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     private var subs = Set<AnyCancellable>()
     nonisolated let url: URL
     nonisolated let push = PassthroughSubject<Void, Failure>()
-    nonisolated let remote = PassthroughSubject<Output?, Failure>()
+    nonisolated let remote = PassthroughSubject<Wrapper<Output>?, Failure>()
     nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
     nonisolated let record = PassthroughSubject<CKRecord.ID, Failure>()
     nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
@@ -66,7 +66,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         synch()
         
         if let data = try? Data(contentsOf: url) {
-            let output: Output = await .prototype(data: data)
+            let output = await Wrapper<Output>(data: data).archive
             upate(model: output)
             await publish(model: output)
         }
@@ -75,8 +75,6 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     }
     
     public func stream() async {
-        model.timestamp = .now
-        
         contracts = contracts
             .filter {
                 $0.sub?.subscriber != nil
@@ -160,6 +158,8 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                                 }
                             }
                             
+                            #warning("if more than 1 then remove all")
+                            
                             if counter < 1 {
                                 let subss = try await base.save(subscription)
 
@@ -216,7 +216,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
             .sink { [weak self] id in
                 Task { [weak self] in
-                    let result = await container.database.configured(with: config) { base -> Output? in
+                    let result = await container.database.configured(with: config) { base -> Wrapper<Output>? in
                         guard
                             let record = try? await base.record(for: id),
                             let asset = record[Asset] as? CKAsset,
@@ -225,7 +225,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                         else {
                             return nil
                         }
-                        return await .prototype(data: data)
+                        return await .init(data: data)
                     }
                     self?.remote.send(result)
                 }
@@ -255,17 +255,17 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     private func synch() {
         remote
             .compactMap { $0 }
-            .flatMap { [weak self] output in
+            .flatMap { [weak self] wrapper in
                 Future { [weak self] promise in
                     Task { [weak self] in
                         guard
                             let current = await self?.model.timestamp,
-                            output.timestamp > current
+                            wrapper.timestamp > current
                         else {
                             promise(.success(nil))
                             return
                         }
-                        promise(.success(output))
+                        await promise(.success(wrapper.archive))
                     }
                 }
             }
@@ -319,9 +319,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             .sink { [weak self] storing in
                 Task
                     .detached(priority: .userInitiated) { [weak self] in
-                        let data = await storing
-                            .0
-                            .compressed
+                        let data = await Wrapper(archive: storing.0).compressed
                         do {
                             try data.write(to: self!.url, options: .atomic)
                             if storing.1 {

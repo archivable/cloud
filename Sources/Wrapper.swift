@@ -24,7 +24,8 @@ struct Wrapper<A> where A : Arch {
         }
     }
     
-    init(data: inout Data) async {
+    init(data: Data) async {
+        var data = data
         if A.version > 2 {
             version = data.removeFirst()
             timestamp = data.number()
