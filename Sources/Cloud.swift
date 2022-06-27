@@ -62,7 +62,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     
     func load(container: Container) async {
         Task.detached { [url] in
-            var url = url
+            var url = url.deletingLastPathComponent()
             var resources = URLResourceValues()
             resources.isExcludedFromBackup = true
             try? url.setResourceValues(resources)
