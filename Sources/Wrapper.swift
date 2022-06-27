@@ -30,7 +30,7 @@ struct Wrapper<A> where A : Arch {
         
         if data.count > 8,
            String(decoding: data.prefix(7), as: UTF8.self) == header,
-           data[8] == firmware {
+           data[7] == firmware {
             
             data = data.dropFirst(8)
             version = data.removeFirst()

@@ -61,7 +61,13 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     }
     
     func load(container: Container) async {
-        url.exclude()
+        Task.detached { [url] in
+            var url = url
+            var resources = URLResourceValues()
+            resources.isExcludedFromBackup = true
+            try? url.setResourceValues(resources)
+        }
+        
         login(container: container)
         synch()
         

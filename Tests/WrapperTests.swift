@@ -11,7 +11,8 @@ final class WrapperTests: XCTestCase {
     }
     
     func testUnwrap() async {
-        let a2 = A2()
+        var a2 = A2()
+        a2.string = "this is a test"
         let wrapper = await Wrapper<A2>(archive: a2)
         let loaded = await Wrapper<A2>(data: wrapper.compressed)
         let unwrapped = await loaded.archive
@@ -80,7 +81,7 @@ private struct A2: Arch {
     static var version = UInt8(3)
     
     var timestamp: UInt32
-    let string: String
+    var string: String
     
     var data: Data {
         get async {

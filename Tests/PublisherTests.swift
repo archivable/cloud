@@ -20,7 +20,7 @@ final class PublisherTests: XCTestCase {
             }
             .store(in: &subs)
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testTwoSubscribers() {
@@ -39,7 +39,7 @@ final class PublisherTests: XCTestCase {
             }
             .store(in: &subs)
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testUpdate() {
@@ -64,6 +64,6 @@ final class PublisherTests: XCTestCase {
                 .store(in: &self.subs)
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
 }

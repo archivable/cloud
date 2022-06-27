@@ -28,7 +28,7 @@ final class CloudTests: XCTestCase {
             await cloud.increaseCounter()
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testSubscribe() {
@@ -41,7 +41,7 @@ final class CloudTests: XCTestCase {
             }
             .store(in: &subs)
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testStream() {
@@ -62,7 +62,7 @@ final class CloudTests: XCTestCase {
             await self.cloud.increaseCounter()
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testSubscription() {
@@ -112,6 +112,6 @@ final class CloudTests: XCTestCase {
                 }
             }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
 }

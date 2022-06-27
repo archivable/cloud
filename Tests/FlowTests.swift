@@ -35,7 +35,7 @@ final class FlowTests: XCTestCase {
         
         cloud.record.send(.init(recordName: "lorem"))
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testNotAvailable() {
@@ -65,7 +65,7 @@ final class FlowTests: XCTestCase {
         cloud.pull.send()
         cloud.push.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testAskRecordOnPull() {
@@ -82,7 +82,7 @@ final class FlowTests: XCTestCase {
         container.status = .available
         cloud.pull.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testAskRecordOnPush() {
@@ -99,7 +99,7 @@ final class FlowTests: XCTestCase {
         container.status = .available
         cloud.push.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testAskRecordJustOnce() {
@@ -118,7 +118,7 @@ final class FlowTests: XCTestCase {
         cloud.pull.send()
         cloud.push.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testPush() {
@@ -134,7 +134,7 @@ final class FlowTests: XCTestCase {
         
         cloud.push.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testPull() {
@@ -161,7 +161,7 @@ final class FlowTests: XCTestCase {
             cloud.pull.send()
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testPullThrottle() {
@@ -179,7 +179,7 @@ final class FlowTests: XCTestCase {
         cloud.pull.send()
         cloud.pull.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testFirstTime() {
@@ -212,49 +212,10 @@ final class FlowTests: XCTestCase {
             }
             .store(in: &subs)
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
-    func testLoad() async {
-        let expectCloud = expectation(description: "cloud")
-        
-        let expectStore = expectation(description: "store")
-        expectStore.isInverted = true
-        
-        let expectPush = expectation(description: "push")
-        expectPush.isInverted = true
-        
-        cloud = .init()
-        try! await Wrapper(archive: Archive(timestamp: 1)).compressed.write(to: cloud.url)
-        
-        cloud
-            .dropFirst()
-            .sink {
-                XCTAssertEqual(1, $0.timestamp)
-                expectCloud.fulfill()
-            }
-            .store(in: &subs)
-
-        cloud
-            .store
-            .sink { _ in
-                expectStore.fulfill()
-            }
-            .store(in: &subs)
-
-        cloud
-            .push
-            .sink {
-                expectPush.fulfill()
-            }
-            .store(in: &subs)
-
-        await cloud.load(container: container)
-        
-        await waitForExpectations(timeout: 1)
-    }
-    
-    func testRemoteSmallerThanLocal() async {
+    func testRemoteSmallerThanLocal() {
         let expectCloud = expectation(description: "")
         expectCloud.isInverted = true
         
@@ -263,7 +224,11 @@ final class FlowTests: XCTestCase {
         
         let expectPush = expectation(description: "")
         
-        await cloud.upate(model: .init(timestamp: 5))
+        let expectResult = expectation(description: "")
+        
+        Task {
+            await cloud.upate(model: .init(timestamp: 5))
+        }
         
         cloud
             .dropFirst()
@@ -286,15 +251,17 @@ final class FlowTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.remote.send(Wrapper(archive: Archive(timestamp: 2)))
+        Task {
+            await cloud.remote.send(Wrapper(archive: Archive(timestamp: 2)))
+            let result = await cloud.model.timestamp
+            XCTAssertEqual(5, result)
+            expectResult.fulfill()
+        }
         
-        let result = await cloud.model.timestamp
-        XCTAssertEqual(5, result)
-        
-        await waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
-    func testRemoteSameAsLocal() async {
+    func testRemoteSameAsLocal() {
         let expectCloud = expectation(description: "")
         expectCloud.isInverted = true
         
@@ -304,7 +271,11 @@ final class FlowTests: XCTestCase {
         let expectPush = expectation(description: "")
         expectPush.isInverted = true
         
-        await cloud.upate(model: .init(timestamp: 5, counter: 3))
+        let expectResult = expectation(description: "")
+        
+        Task {
+            await cloud.upate(model: .init(timestamp: 5, counter: 3))
+        }
         
         cloud
             .dropFirst()
@@ -327,13 +298,17 @@ final class FlowTests: XCTestCase {
             }
             .store(in: &subs)
         
-        await cloud.remote.send(Wrapper(archive: Archive(timestamp: 5, counter: 4)))
+        Task {
+            await cloud.remote.send(Wrapper(archive: Archive(timestamp: 5, counter: 4)))
+            
+            let result = await cloud.model
+            XCTAssertEqual(5, result.timestamp)
+            XCTAssertEqual(3, result.counter)
+            
+            expectResult.fulfill()
+        }
         
-        let result = await cloud.model
-        XCTAssertEqual(5, result.timestamp)
-        XCTAssertEqual(3, result.counter)
-        
-        await waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testNoLocalButRemote() {
@@ -376,7 +351,7 @@ final class FlowTests: XCTestCase {
             await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testLocalSmallerThanRemote() {
@@ -423,7 +398,7 @@ final class FlowTests: XCTestCase {
             await cloud.remote.send(Wrapper(archive: Archive(timestamp: 3)))
         }
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testNoRemote() {
@@ -459,7 +434,7 @@ final class FlowTests: XCTestCase {
         cloud.record.send(.init(recordName: "lorem"))
         cloud.pull.send()
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testStore() {
@@ -476,7 +451,7 @@ final class FlowTests: XCTestCase {
         
         cloud.store.send((.init(timestamp: 1), true))
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
     
     func testStoreNoPush() {
@@ -496,6 +471,6 @@ final class FlowTests: XCTestCase {
         
         cloud.store.send((.init(timestamp: 1), false))
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 0.5)
     }
 }
