@@ -24,6 +24,20 @@ final class WrapperTests: XCTestCase {
         let a2 = await wrapper.archive
         XCTAssertEqual(a1.string, a2.string)
     }
+    
+    func testEmpty() async {
+        let loaded = await Wrapper<A2>(data: .init())
+        let unwrapped = await loaded.archive
+        XCTAssertGreaterThanOrEqual(unwrapped.timestamp, 1)
+        XCTAssertEqual("hello world\nlorem ipsum", unwrapped.string)
+    }
+    
+    func testSomethingElse() async {
+        let loaded = await Wrapper<A2>(data: Data("hello world, lorem ipsum".utf8))
+        let unwrapped = await loaded.archive
+        XCTAssertGreaterThanOrEqual(unwrapped.timestamp, 1)
+        XCTAssertEqual("hello world\nlorem ipsum", unwrapped.string)
+    }
 }
 
 private struct A1: Arch {
