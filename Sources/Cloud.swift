@@ -136,32 +136,21 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             .sink { id in
                 Task {
                     await container.database.configured(with: config) { base in
-                        
-                        let subscription = CKQuerySubscription(
-                            recordType: Type,
-                            predicate: .init(format: "recordID = %@", id),
-                            options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
-                        subscription.notificationInfo = .init(shouldSendContentAvailable: true)
-                        
                         do {
                             let all = try await base.allSubscriptions()
                             var cleaned = [CKQuerySubscription]()
-                            Swift.print(all.count)
                             
                             for index in 0 ..< all.count {
                                 let old = all[index]
+                                
                                 guard
                                     let query = old as? CKQuerySubscription,
-                                    query.notificationInfo?.shouldSendContentAvailable == subscription.notificationInfo?.shouldSendContentAvailable,
-                                    query.notificationInfo?.shouldBadge == subscription.notificationInfo?.shouldBadge,
-                                    query.notificationInfo?.alertBody == subscription.notificationInfo?.alertBody,
-                                    query.recordType == subscription.recordType
+                                    query.notificationInfo?.shouldSendContentAvailable == true,
+                                    query.notificationInfo?.shouldBadge == false,
+                                    query.notificationInfo?.alertBody == nil,
+                                    query.recordType == Type
                                 else {
-                                    let query = old as? CKQuerySubscription
-                                    Swift.print(subscription.predicate.predicateFormat)
-                                    Swift.print(query?.predicate.predicateFormat)
-                                    let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
-                                    Swift.print("deleted \(deleted)")
+                                    _ = try await base.deleteSubscription(withID: old.subscriptionID)
                                     continue
                                 }
                                 cleaned.append(query)
@@ -169,22 +158,20 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             
                             if cleaned.count > 1 {
                                 for old in cleaned {
-                                    let deleted = try await base.deleteSubscription(withID: old.subscriptionID)
-                                    Swift.print("cleaned deleted \(deleted)")
+                                    _ = try await base.deleteSubscription(withID: old.subscriptionID)
                                 }
                                 cleaned = []
                             }
                             
                             if cleaned.isEmpty {
-                                let subss = try await base.save(subscription)
-
-                                Swift.print(subss.subscriptionID)
-                            } else {
-                                Swift.print("still working")
+                                let subscription = CKQuerySubscription(
+                                    recordType: Type,
+                                    predicate: .init(format: "recordID = %@", id),
+                                    options: [.firesOnRecordUpdate, .firesOnRecordDeletion, .firesOnRecordCreation])
+                                subscription.notificationInfo = .init(shouldSendContentAvailable: true)
+                                _ = try await base.save(subscription)
                             }
-                            
                         } catch {
-                            Swift.print("all error")
                             Swift.print(error)
                         }
                     }
