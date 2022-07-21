@@ -137,33 +137,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                 Task {
                     await container.database.configured(with: config) { base in
                         do {
-                            let all = try await base.allSubscriptions()
-                            var cleaned = [CKQuerySubscription]()
-                            
-                            for index in 0 ..< all.count {
-                                let old = all[index]
-                                
-                                guard
-                                    let query = old as? CKQuerySubscription,
-                                    query.notificationInfo?.shouldSendContentAvailable == true,
-                                    query.notificationInfo?.shouldBadge == false,
-                                    query.notificationInfo?.alertBody == nil,
-                                    query.recordType == Type
-                                else {
-                                    _ = try await base.deleteSubscription(withID: old.subscriptionID)
-                                    continue
-                                }
-                                cleaned.append(query)
-                            }
-                            
-                            if cleaned.count > 1 {
-                                for old in cleaned {
-                                    _ = try await base.deleteSubscription(withID: old.subscriptionID)
-                                }
-                                cleaned = []
-                            }
-                            
-                            if cleaned.isEmpty {
+                            if try await base.allSubscriptions().isEmpty {
                                 let subscription = CKQuerySubscription(
                                     recordType: Type,
                                     predicate: .init(format: "recordID = %@", id),
