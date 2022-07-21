@@ -31,22 +31,15 @@ struct Wrapper<A> where A : Arch {
         if data.count > 8,
            String(decoding: data.prefix(7), as: UTF8.self) == header,
            data[7] == firmware {
-            
-            data = data.dropFirst(8)
-            version = data.removeFirst()
-            timestamp = data.number()
-            self.data = data
-        } else if var data = try? await data.decompress {
-            
-            version = data.removeFirst()
-            timestamp = data.number()
-            self.data = await data.compressed
+                data = data.dropFirst(8)
+                version = data.removeFirst()
+                timestamp = data.number()
+                self.data = data
         } else {
-            
-            let archive = A()
-            version = A.version
-            timestamp = archive.timestamp
-            self.data = await archive.data.compressed
+                let archive = A()
+                version = A.version
+                timestamp = archive.timestamp
+                self.data = await archive.data.compressed
         }
     }
     

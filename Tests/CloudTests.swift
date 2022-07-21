@@ -9,6 +9,12 @@ final class CloudTests: XCTestCase {
     override func setUp() {
         cloud = .init()
         subs = []
+        
+        try? FileManager.default.removeItem(at: cloud.url)
+    }
+    
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: cloud.url)
     }
     
     func testPersist() {
@@ -32,6 +38,19 @@ final class CloudTests: XCTestCase {
     }
     
     func testSubscribe() {
+        let expect = expectation(description: "")
+
+        cloud
+            .sink { _ in
+                XCTAssertEqual(Thread.main, Thread.current)
+                expect.fulfill()
+            }
+            .store(in: &subs)
+        
+        waitForExpectations(timeout: 0.5)
+    }
+    
+    func testLoadedNotRepeat() {
         let expect = expectation(description: "")
 
         cloud
