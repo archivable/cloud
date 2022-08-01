@@ -227,7 +227,7 @@ final class FlowTests: XCTestCase {
         let expectResult = expectation(description: "")
         
         Task {
-            await cloud.upate(model: .init(timestamp: 5))
+            await cloud.update(model: .init(timestamp: 5))
         }
         
         cloud
@@ -274,7 +274,7 @@ final class FlowTests: XCTestCase {
         let expectResult = expectation(description: "")
         
         Task {
-            await cloud.upate(model: .init(timestamp: 5, counter: 3))
+            await cloud.update(model: .init(timestamp: 5, counter: 3))
         }
         
         cloud
@@ -363,7 +363,7 @@ final class FlowTests: XCTestCase {
         expectPush.isInverted = true
         
         Task {
-            await cloud.upate(model: .init(timestamp: 2))
+            await cloud.update(model: .init(timestamp: 2))
         }
         
         cloud

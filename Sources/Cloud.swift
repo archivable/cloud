@@ -73,7 +73,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         
         if let data = try? Data(contentsOf: url) {
             let output = await Wrapper<Output>(data: data).archive
-            upate(model: output)
+            update(model: output)
             await publish(model: output)
         }
         
@@ -93,6 +93,17 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         store.send((model, true))
     }
     
+    public func publish(model: Output) async {
+        let subscribers = contracts.compactMap(\.sub?.subscriber)
+        await MainActor
+            .run {
+                subscribers
+                    .forEach {
+                        _ = $0.receive(model)
+                    }
+            }
+    }
+    
     nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
         let sub = Sub(subscriber: .init(subscriber))
         subscriber.receive(subscription: sub)
@@ -102,7 +113,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         }
     }
     
-    func upate(model: Output) {
+    func update(model: Output) {
         self.model = model
     }
     
@@ -112,17 +123,6 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         await MainActor
             .run {
                 _ = contract.sub?.subscriber?.receive(initial)
-            }
-    }
-    
-    private func publish(model: Output) async {
-        let subscribers = contracts.compactMap(\.sub?.subscriber)
-        await MainActor
-            .run {
-                subscribers
-                    .forEach {
-                        _ = $0.receive(model)
-                    }
             }
     }
     
@@ -250,7 +250,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
             .sink { [weak self] (model: Output) in
                 Task { [weak self] in
-                    await self?.upate(model: model)
+                    await self?.update(model: model)
                     await self?.publish(model: model)
                     self?.store.send((model, false))
                 }
