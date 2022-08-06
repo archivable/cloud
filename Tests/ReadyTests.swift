@@ -26,7 +26,6 @@ final class ReadyTests: XCTestCase {
         let record = CKRecord(recordType: "lorem")
         record["payload"] = asset
         container.database.record = record
-        
         container.status = .available
         
         cloud
