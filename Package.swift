@@ -21,6 +21,6 @@ let package = Package(
         .testTarget(
             name: "Tests",
             dependencies: ["Archivable"],
-            path: "Tests"),
+            path: "Tests")
     ]
 )

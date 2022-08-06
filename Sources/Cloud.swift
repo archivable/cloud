@@ -26,6 +26,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     nonisolated public let ready = DispatchGroup()
     nonisolated public let pull = PassthroughSubject<Void, Failure>()
     private(set) var contracts = [Contract]()
+    private var loaded = false
     private var subs = Set<AnyCancellable>()
     nonisolated let url: URL
     nonisolated let push = PassthroughSubject<Void, Failure>()
@@ -77,7 +78,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             await publish(model: output)
         }
         
-        ready.leave()
+        pull.send()
     }
     
     public func stream() async {
@@ -155,15 +156,16 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         
         pull
             .merge(with: push)
-            .flatMap { _ in
-                Future { promise in
-                    Task {
+            .flatMap { [weak self] _ in
+                Future { [weak self] promise in
+                    Task { [weak self] in
                         guard
                             let status = try? await container.accountStatus(),
                             status == .available,
                             let user = try? await container.userRecordID()
                         else {
                             promise(.success(nil))
+                            await self?.notify()
                             return
                         }
                         promise(.success(.init(recordName: Prefix + user.recordName)))
@@ -199,6 +201,9 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             let fileURL = asset.fileURL,
                             let data = try? Data(contentsOf: fileURL)
                         else {
+                            Task { [weak self] in
+                                await self?.notify()
+                            }
                             return nil
                         }
                         return await .init(data: data)
@@ -253,6 +258,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                     await self?.update(model: model)
                     await self?.publish(model: model)
                     self?.store.send((model, false))
+                    await self?.notify()
                 }
             }
             .store(in: &subs)
@@ -305,5 +311,11 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                     }
             }
             .store(in: &subs)
+    }
+    
+    private func notify() {
+        guard !loaded else { return }
+        loaded = true
+        ready.leave()
     }
 }

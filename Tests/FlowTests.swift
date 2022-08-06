@@ -123,6 +123,7 @@ final class FlowTests: XCTestCase {
     
     func testPush() {
         let expect = expectation(description: "")
+        expect.expectedFulfillmentCount = 2
         
         cloud.record.send(.init(recordName: "lorem"))
         
@@ -146,18 +147,19 @@ final class FlowTests: XCTestCase {
         record["payload"] = asset
         container.database.record = record
         
-        cloud
-            .remote
-            .sink {
-                XCTAssertEqual(99, $0?.timestamp)
-                expect.fulfill()
-            }
-            .store(in: &subs)
-        
-        cloud.record.send(.init(recordName: "lorem"))
-        
         Task {
             try! await Wrapper(archive: Archive(timestamp: 99, counter: 22)).compressed.write(to: remote)
+            
+            cloud
+                .remote
+                .sink {
+                    XCTAssertEqual(99, $0?.timestamp)
+                    expect.fulfill()
+                }
+                .store(in: &subs)
+            
+            cloud.record.send(.init(recordName: "lorem"))
+            
             cloud.pull.send()
         }
         
