@@ -244,6 +244,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             wrapper.timestamp > current
                         else {
                             promise(.success(nil))
+                            await self?.notify()
                             return
                         }
                         await promise(.success(wrapper.archive))

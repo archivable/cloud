@@ -76,4 +76,28 @@ final class ReadyTests: XCTestCase {
         
         waitForExpectations(timeout: 0.5)
     }
+    
+    func testRemoteSmallerThanLocal() {
+        let expect = expectation(description: "")
+        let remote = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let asset = CKAsset(fileURL: remote)
+        let record = CKRecord(recordType: "lorem")
+        record["payload"] = asset
+        container.database.record = record
+        container.status = .available
+        
+        cloud
+            .ready
+            .notify(queue: .main) {
+                expect.fulfill()
+            }
+        
+        Task {
+            try! await Wrapper(archive: Archive(timestamp: 2)).compressed.write(to: remote)
+            await cloud.update(model: .init(timestamp: 5))
+            await cloud.load(container: container)
+        }
+        
+        waitForExpectations(timeout: 0.5)
+    }
 }
