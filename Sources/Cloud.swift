@@ -30,7 +30,6 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
     let remote = PassthroughSubject<Wrapper<Output>?, Failure>()
     let store = PassthroughSubject<(Output, Bool), Failure>()
     let record = PassthroughSubject<CKRecord.ID, Failure>()
-    private var loaded = false
     private var subs = Set<AnyCancellable>()
     private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
@@ -61,7 +60,7 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
     }
     
     public func publish(model: Output) async {
-        let subscribers = await actor.contracts.compactMap(\.sub?.subscriber)
+        let subscribers = await actor.subscribers
         await MainActor
             .run {
                 subscribers
@@ -76,11 +75,12 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
         subscriber.receive(subscription: sub)
         
         Task {
-            let model = await actor.store(contract: .init(sub: sub))
+            await actor.store(contract: .init(sub: sub))
+            let model = await actor.model
             
             await MainActor
                 .run {
-                    _ = sub.subscriber?.receive(model)
+                    _ = subscriber.receive(model)
                 }
         }
     }
@@ -89,7 +89,8 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
         var model = await actor.model
         do {
             try mutate(&model)
-            let model = await actor.prepare(model: model)
+            model.timestamp = .now
+            await actor.update(model: model)
             await publish(model: model)
             store.send((model, true))
         } catch { }
@@ -153,7 +154,7 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             let user = try? await container.userRecordID()
                         else {
                             promise(.success(nil))
-                            self?.notify()
+                            await self?.notify()
                             return
                         }
                         promise(.success(.init(recordName: Prefix + user.recordName)))
@@ -190,7 +191,7 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             let data = try? Data(contentsOf: fileURL)
                         else {
                             Task { [weak self] in
-                                self?.notify()
+                                await self?.notify()
                             }
                             return nil
                         }
@@ -232,7 +233,7 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             wrapper.timestamp > current
                         else {
                             promise(.success(nil))
-                            self?.notify()
+                            await self?.notify()
                             return
                         }
                         await promise(.success(wrapper.archive))
@@ -247,7 +248,7 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                     await self?.actor.update(model: model)
                     await self?.publish(model: model)
                     self?.store.send((model, false))
-                    self?.notify()
+                    await self?.notify()
                 }
             }
             .store(in: &subs)
@@ -302,9 +303,9 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
             .store(in: &subs)
     }
     
-    private func notify() {
-        guard !loaded else { return }
-        loaded = true
+    private func notify() async {
+        guard await !actor.loaded else { return }
+        await actor.ready()
         ready.leave()
     }
 }
