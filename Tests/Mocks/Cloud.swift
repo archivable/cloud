@@ -1,9 +1,15 @@
 import Foundation
-import Archivable
+@testable import Archivable
 
 extension Cloud where Output == Archive {
     func increaseCounter() async {
-        model.counter += 1
+        await actor.increaseCounter()
         await stream()
+    }
+}
+
+private extension Cloud.Actor where Output == Archive {
+    func increaseCounter() async {
+        model.counter += 1
     }
 }

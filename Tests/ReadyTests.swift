@@ -94,7 +94,7 @@ final class ReadyTests: XCTestCase {
         
         Task {
             try! await Wrapper(archive: Archive(timestamp: 2)).compressed.write(to: remote)
-            await cloud.update(model: .init(timestamp: 5))
+            await cloud.actor.update(model: .init(timestamp: 5))
             await cloud.load(container: container)
         }
         

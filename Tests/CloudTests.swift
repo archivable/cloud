@@ -125,7 +125,7 @@ final class CloudTests: XCTestCase {
                 XCTAssertNil(sub2)
                 Task {
                     await self.cloud.increaseCounter()
-                    let count = await self.cloud.contracts.count
+                    let count = await self.cloud.actor.contracts.count
                     XCTAssertEqual(0, count)
                     expect.fulfill()
                 }

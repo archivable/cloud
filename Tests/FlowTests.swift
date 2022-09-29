@@ -229,7 +229,7 @@ final class FlowTests: XCTestCase {
         let expectResult = expectation(description: "")
         
         Task {
-            await cloud.update(model: .init(timestamp: 5))
+            await cloud.actor.update(model: .init(timestamp: 5))
         }
         
         cloud
@@ -255,7 +255,7 @@ final class FlowTests: XCTestCase {
         
         Task {
             await cloud.remote.send(Wrapper(archive: Archive(timestamp: 2)))
-            let result = await cloud.model.timestamp
+            let result = await cloud.actor.model.timestamp
             XCTAssertEqual(5, result)
             expectResult.fulfill()
         }
@@ -276,7 +276,7 @@ final class FlowTests: XCTestCase {
         let expectResult = expectation(description: "")
         
         Task {
-            await cloud.update(model: .init(timestamp: 5, counter: 3))
+            await cloud.actor.update(model: .init(timestamp: 5, counter: 3))
         }
         
         cloud
@@ -303,7 +303,7 @@ final class FlowTests: XCTestCase {
         Task {
             await cloud.remote.send(Wrapper(archive: Archive(timestamp: 5, counter: 4)))
             
-            let result = await cloud.model
+            let result = await cloud.actor.model
             XCTAssertEqual(5, result.timestamp)
             XCTAssertEqual(3, result.counter)
             
@@ -335,7 +335,7 @@ final class FlowTests: XCTestCase {
                 XCTAssertEqual(3, $0.0.timestamp)
 
                 Task {
-                    let result = await self.cloud.model.timestamp
+                    let result = await self.cloud.actor.model.timestamp
                     XCTAssertEqual(3, result)
                     expectStore.fulfill()
                 }
@@ -365,7 +365,7 @@ final class FlowTests: XCTestCase {
         expectPush.isInverted = true
         
         Task {
-            await cloud.update(model: .init(timestamp: 2))
+            await cloud.actor.update(model: .init(timestamp: 2))
         }
         
         cloud
@@ -382,7 +382,7 @@ final class FlowTests: XCTestCase {
                 XCTAssertEqual(3, $0.0.timestamp)
                 
                 Task {
-                    let result = await self.cloud.model.timestamp
+                    let result = await self.cloud.actor.model.timestamp
                     XCTAssertEqual(3, result)
                     expectStore.fulfill()
                 }

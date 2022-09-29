@@ -11,7 +11,7 @@ private let Suffix = ".debug.data"
 private let Suffix = ".data"
 #endif
 
-public final actor Cloud<Output, Container>: Publisher where Output : Arch, Container : CloudContainer {
+public final class Cloud<Output, Container>: Publisher where Output : Arch, Container : CloudContainer {
     public typealias Failure = Never
     
     public static func new(identifier: String) -> Self {
@@ -22,20 +22,19 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         return cloud
     }
     
-    public var model = Output()
-    nonisolated public let ready = DispatchGroup()
-    nonisolated public let pull = PassthroughSubject<Void, Failure>()
-    private(set) var contracts = [Contract]()
+    public let ready = DispatchGroup()
+    public let pull = PassthroughSubject<Void, Failure>()
+    let url: URL
+    let actor = Actor()
+    let push = PassthroughSubject<Void, Failure>()
+    let remote = PassthroughSubject<Wrapper<Output>?, Failure>()
+    let store = PassthroughSubject<(Output, Bool), Failure>()
+    let record = PassthroughSubject<CKRecord.ID, Failure>()
     private var loaded = false
     private var subs = Set<AnyCancellable>()
-    nonisolated let url: URL
-    nonisolated let push = PassthroughSubject<Void, Failure>()
-    nonisolated let remote = PassthroughSubject<Wrapper<Output>?, Failure>()
-    nonisolated let store = PassthroughSubject<(Output, Bool), Failure>()
-    nonisolated let record = PassthroughSubject<CKRecord.ID, Failure>()
-    nonisolated private let queue = DispatchQueue(label: "", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
-    public var notified: Bool {
+    public var backgroundFetch: Bool {
         get async {
             await withUnsafeContinuation { continuation in
                 var sub: AnyCancellable?
@@ -74,7 +73,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
         
         if let data = try? Data(contentsOf: url) {
             let output = await Wrapper<Output>(data: data).archive
-            update(model: output)
+            await actor.update(model: output)
             await publish(model: output)
         }
         
@@ -82,20 +81,13 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
     }
     
     public func stream() async {
-        model.timestamp = .now
-        
-        contracts = contracts
-            .filter {
-                $0.sub?.subscriber != nil
-            }
-        
+        let model = await actor.stream()
         await publish(model: model)
-        
         store.send((model, true))
     }
     
     public func publish(model: Output) async {
-        let subscribers = contracts.compactMap(\.sub?.subscriber)
+        let subscribers = await actor.contracts.compactMap(\.sub?.subscriber)
         await MainActor
             .run {
                 subscribers
@@ -105,26 +97,18 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
     }
     
-    nonisolated public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
+    public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
         let sub = Sub(subscriber: .init(subscriber))
         subscriber.receive(subscription: sub)
         
         Task {
-            await store(contract: .init(sub: sub))
+            let model = await actor.store(contract: .init(sub: sub))
+            
+            await MainActor
+                .run {
+                    _ = sub.subscriber?.receive(model)
+                }
         }
-    }
-    
-    func update(model: Output) {
-        self.model = model
-    }
-    
-    private func store(contract: Contract) async {
-        contracts.append(contract)
-        let initial = model
-        await MainActor
-            .run {
-                _ = contract.sub?.subscriber?.receive(initial)
-            }
     }
     
     private func login(container: Container) {
@@ -165,7 +149,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             let user = try? await container.userRecordID()
                         else {
                             promise(.success(nil))
-                            await self?.notify()
+                            self?.notify()
                             return
                         }
                         promise(.success(.init(recordName: Prefix + user.recordName)))
@@ -202,7 +186,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                             let data = try? Data(contentsOf: fileURL)
                         else {
                             Task { [weak self] in
-                                await self?.notify()
+                                self?.notify()
                             }
                             return nil
                         }
@@ -240,11 +224,11 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                 Future { [weak self] promise in
                     Task { [weak self] in
                         guard
-                            let current = await self?.model.timestamp,
+                            let current = await self?.actor.model.timestamp,
                             wrapper.timestamp > current
                         else {
                             promise(.success(nil))
-                            await self?.notify()
+                            self?.notify()
                             return
                         }
                         await promise(.success(wrapper.archive))
@@ -256,10 +240,10 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
             }
             .sink { [weak self] (model: Output) in
                 Task { [weak self] in
-                    await self?.update(model: model)
+                    await self?.actor.update(model: model)
                     await self?.publish(model: model)
                     self?.store.send((model, false))
-                    await self?.notify()
+                    self?.notify()
                 }
             }
             .store(in: &subs)
@@ -279,7 +263,7 @@ public final actor Cloud<Output, Container>: Publisher where Output : Arch, Cont
                 Future { [weak self] promise in
                     Task { [weak self] in
                         guard
-                            let current = await self?.model.timestamp,
+                            let current = await self?.actor.model.timestamp,
                             output.timestamp < current
                         else {
                             promise(.success(false))
