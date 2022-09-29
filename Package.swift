@@ -1,13 +1,13 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.7
 
 import PackageDescription
 
 let package = Package(
     name: "Archivable",
     platforms: [
-        .iOS(.v15),
+        .iOS(.v16),
         .macOS(.v12),
-        .watchOS(.v8)
+        .watchOS(.v9)
     ],
     products: [
         .library(
