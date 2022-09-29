@@ -15,15 +15,16 @@ extension Cloud {
         var model = Output()
         private(set) var contracts = [Contract]()
         
-        func stream() -> Output {
-            model.timestamp = .now
+        func prepare(model: Output) -> Output {
+            update(model: model)
+            self.model.timestamp = .now
             
             contracts = contracts
                 .filter {
                     $0.sub?.subscriber != nil
                 }
             
-            return model
+            return self.model
         }
         
         func update(model: Output) {

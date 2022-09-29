@@ -53,7 +53,10 @@ final class PublisherTests: XCTestCase {
             .store(in: &subs)
         
         Task {
-            await cloud.increaseCounter()
+            await cloud
+                .model {
+                    $0.counter += 1
+                }
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now()) {

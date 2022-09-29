@@ -60,32 +60,6 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
-    func load(container: Container) async {
-        Task.detached { [url] in
-            var url = url.deletingLastPathComponent()
-            var resources = URLResourceValues()
-            resources.isExcludedFromBackup = true
-            try? url.setResourceValues(resources)
-        }
-        
-        login(container: container)
-        synch()
-        
-        if let data = try? Data(contentsOf: url) {
-            let output = await Wrapper<Output>(data: data).archive
-            await actor.update(model: output)
-            await publish(model: output)
-        }
-        
-        pull.send()
-    }
-    
-    public func stream() async {
-        let model = await actor.stream()
-        await publish(model: model)
-        store.send((model, true))
-    }
-    
     public func publish(model: Output) async {
         let subscribers = await actor.contracts.compactMap(\.sub?.subscriber)
         await MainActor
@@ -109,6 +83,36 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                     _ = sub.subscriber?.receive(model)
                 }
         }
+    }
+    
+    public func model(mutate: (inout Output) throws -> Void) async {
+        var model = await actor.model
+        do {
+            try mutate(&model)
+            let model = await actor.prepare(model: model)
+            await publish(model: model)
+            store.send((model, true))
+        } catch { }
+    }
+    
+    func load(container: Container) async {
+        Task.detached { [url] in
+            var url = url.deletingLastPathComponent()
+            var resources = URLResourceValues()
+            resources.isExcludedFromBackup = true
+            try? url.setResourceValues(resources)
+        }
+        
+        login(container: container)
+        synch()
+        
+        if let data = try? Data(contentsOf: url) {
+            let output = await Wrapper<Output>(data: data).archive
+            await actor.update(model: output)
+            await publish(model: output)
+        }
+        
+        pull.send()
     }
     
     private func login(container: Container) {
