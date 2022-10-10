@@ -53,10 +53,9 @@ final class PublisherTests: XCTestCase {
             .store(in: &subs)
         
         Task {
-            await cloud
-                .model {
-                    $0.counter += 1
-                }
+            var model = await cloud.model
+            model.counter += 1
+            await cloud.update(model: model)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now()) {

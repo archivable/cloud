@@ -33,6 +33,12 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
     private var subs = Set<AnyCancellable>()
     private let queue = DispatchQueue(label: "", qos: .userInitiated)
     
+    public var model: Output {
+        get async {
+            await actor.model
+        }
+    }
+    
     public var backgroundFetch: Bool {
         get async {
             await withUnsafeContinuation { continuation in
@@ -59,15 +65,12 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
         url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(Type + Suffix)
     }
     
-    public func publish(model: Output) async {
-        let subscribers = await actor.subscribers
-        await MainActor
-            .run {
-                subscribers
-                    .forEach {
-                        _ = $0.receive(model)
-                    }
-            }
+    public func update(model: Output) async {
+        var model = model
+        model.timestamp = .now
+        await actor.update(model: model)
+        await publish(model: model)
+        store.send((model, true))
     }
     
     public func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
@@ -83,17 +86,6 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
                     _ = subscriber.receive(model)
                 }
         }
-    }
-    
-    public func model(mutate: (inout Output) throws -> Void) async {
-        var model = await actor.model
-        do {
-            try mutate(&model)
-            model.timestamp = .now
-            await actor.update(model: model)
-            await publish(model: model)
-            store.send((model, true))
-        } catch { }
     }
     
     func load(container: Container) async {
@@ -114,6 +106,17 @@ public final class Cloud<Output, Container>: Publisher where Output : Arch, Cont
         }
         
         pull.send()
+    }
+    
+    private func publish(model: Output) async {
+        let subscribers = await actor.subscribers
+        await MainActor
+            .run {
+                subscribers
+                    .forEach {
+                        _ = $0.receive(model)
+                    }
+            }
     }
     
     private func login(container: Container) {

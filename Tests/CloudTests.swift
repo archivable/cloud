@@ -31,10 +31,9 @@ final class CloudTests: XCTestCase {
             .store(in: &subs)
         
         Task {
-            await cloud
-                .model {
-                    $0.counter += 1
-                }
+            var model = await cloud.model
+            model.counter += 1
+            await cloud.update(model: model)
         }
         
         waitForExpectations(timeout: 0.5)
@@ -81,10 +80,9 @@ final class CloudTests: XCTestCase {
             .store(in: &subs)
         
         Task {
-            await cloud
-                .model {
-                    $0.counter += 1
-                }
+            var model = await cloud.model
+            model.counter += 1
+            await cloud.update(model: model)
         }
         
         waitForExpectations(timeout: 0.5)
@@ -106,10 +104,9 @@ final class CloudTests: XCTestCase {
             .sink {
                 XCTAssertEqual(0, $0.counter)
                 Task {
-                    await self.cloud
-                        .model {
-                            $0.counter += 1
-                        }
+                    var model = await self.cloud.model
+                    model.counter += 1
+                    await self.cloud.update(model: model)
                 }
             }
             .store(in: &subs)
@@ -121,10 +118,9 @@ final class CloudTests: XCTestCase {
                 XCTAssertEqual(1, $0.counter)
                 sub1?.cancel()
                 Task {
-                    await self.cloud
-                        .model {
-                            $0.counter += 1
-                        }
+                    var model = await self.cloud.model
+                    model.counter += 1
+                    await self.cloud.update(model: model)
                 }
             }
         
@@ -136,10 +132,9 @@ final class CloudTests: XCTestCase {
                 sub2 = nil
                 XCTAssertNil(sub2)
                 Task {
-                    await self.cloud
-                        .model {
-                            $0.counter += 1
-                        }
+                    var model = await self.cloud.model
+                    model.counter += 1
+                    await self.cloud.update(model: model)
                     let count = await self.cloud.actor.contracts.count
                     XCTAssertEqual(0, count)
                     expect.fulfill()

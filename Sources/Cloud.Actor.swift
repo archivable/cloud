@@ -5,7 +5,7 @@ extension Cloud {
     final actor Actor {
         private(set) var model = Output()
         private(set) var loaded = false
-        private var contracts = [Contract]()
+        private(set) var contracts = [Contract]()
         
         var subscribers: [AnySubscriber<Output, Failure>] {
             contracts = contracts
