@@ -6,7 +6,7 @@ let package = Package(
     name: "Archivable",
     platforms: [
         .iOS(.v16),
-        .macOS(.v12),
+        .macOS(.v13),
         .watchOS(.v9)
     ],
     products: [
