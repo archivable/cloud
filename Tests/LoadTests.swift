@@ -1,11 +1,10 @@
 import XCTest
 import Combine
-import CloudKit
 @testable import Archivable
 
 final class LoadTests: XCTestCase {
     private var container: MockContainer!
-    private var cloud: Cloud<Archive, MockContainer>!
+    private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
     
     override func setUp() async throws {

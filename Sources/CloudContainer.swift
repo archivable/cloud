@@ -1,6 +1,6 @@
 import CloudKit
 
-public protocol CloudContainer {
+protocol CloudContainer {
     associatedtype Database : CloudDatabase
     var database: Database { get }
     

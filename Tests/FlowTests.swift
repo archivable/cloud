@@ -5,7 +5,7 @@ import CloudKit
 
 final class FlowTests: XCTestCase {
     private var container: MockContainer!
-    private var cloud: Cloud<Archive, MockContainer>!
+    private var cloud: Cloud<Archive>!
     private var subs: Set<AnyCancellable>!
     
     override func setUp() async throws {

@@ -1,6 +1,6 @@
 import CloudKit
 
-public protocol CloudDatabase {
+protocol CloudDatabase {
     func configured<R>(with: CKOperation.Configuration, body: (CloudDatabase) async -> R) async -> R
     func save(_ subscription: CKSubscription) async throws -> CKSubscription
     func record(for recordID: CKRecord.ID) async throws -> CKRecord

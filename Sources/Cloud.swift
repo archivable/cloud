@@ -11,13 +11,15 @@ private let Suffix = ".debug.data"
 private let Suffix = ".data"
 #endif
 
-public final class Cloud<Output, Container>: Publisher, @unchecked Sendable where Output : Arch, Container : CloudContainer {
+public final class Cloud<Output>: Publisher, @unchecked Sendable where Output : Arch {
     public typealias Failure = Never
     
-    public static func new(identifier: String) -> Self {
+    public static func new(identifier: String?) -> Self {
         let cloud = Self()
         Task {
-            await cloud.load(container: Container(identifier: identifier))
+            await cloud.load(container: identifier == nil
+                             ? MockContainer(identifier: "")
+                             : CKContainer(identifier: identifier!))
         }
         return cloud
     }
@@ -88,7 +90,7 @@ public final class Cloud<Output, Container>: Publisher, @unchecked Sendable wher
         }
     }
     
-    func load(container: Container) async {
+    func load(container: any CloudContainer) async {
         Task.detached { [url] in
             var url = url.deletingLastPathComponent()
             var resources = URLResourceValues()
@@ -119,7 +121,7 @@ public final class Cloud<Output, Container>: Publisher, @unchecked Sendable wher
             }
     }
     
-    private func login(container: Container) {
+    private func login(container: any CloudContainer) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
         config.timeoutIntervalForResource = 13
