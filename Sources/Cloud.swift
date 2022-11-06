@@ -11,7 +11,7 @@ private let Suffix = ".debug.data"
 private let Suffix = ".data"
 #endif
 
-public final class Cloud<Output, Container>: Publisher where Output : Arch, Container : CloudContainer {
+public final class Cloud<Output, Container>: Publisher, @unchecked Sendable where Output : Arch, Container : CloudContainer {
     public typealias Failure = Never
     
     public static func new(identifier: String) -> Self {
