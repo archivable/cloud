@@ -17,9 +17,11 @@ public final class Cloud<Output>: Publisher, @unchecked Sendable where Output : 
     public static func new(identifier: String?) -> Self {
         let cloud = Self()
         Task {
-            await cloud.load(container: identifier == nil
-                             ? MockContainer(identifier: "")
-                             : CKContainer(identifier: identifier!))
+            if let identifier {
+                await cloud.load(container: CKContainer(identifier: identifier))
+            } else {
+                await cloud.load(container: MockContainer(identifier: ""))
+            }
         }
         return cloud
     }
@@ -90,7 +92,7 @@ public final class Cloud<Output>: Publisher, @unchecked Sendable where Output : 
         }
     }
     
-    func load(container: any CloudContainer) async {
+    func load(container: some CloudContainer) async {
         Task.detached { [url] in
             var url = url.deletingLastPathComponent()
             var resources = URLResourceValues()
@@ -121,7 +123,7 @@ public final class Cloud<Output>: Publisher, @unchecked Sendable where Output : 
             }
     }
     
-    private func login(container: any CloudContainer) {
+    private func login(container: some CloudContainer) {
         let config = CKOperation.Configuration()
         config.timeoutIntervalForRequest = 13
         config.timeoutIntervalForResource = 13
