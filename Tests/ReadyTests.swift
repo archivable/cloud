@@ -1,7 +1,7 @@
 import XCTest
 import Combine
 import CloudKit
-@testable import Archivable
+@testable import Cloud
 
 final class ReadyTests: XCTestCase {
     private var container: MockContainer!

@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "Archivable",
+    name: "Cloud",
     platforms: [
         .iOS(.v16),
         .macOS(.v13),
@@ -11,16 +11,16 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "Archivable",
-            targets: ["Archivable"]),
+            name: "Cloud",
+            targets: ["Cloud"]),
     ],
     targets: [
         .target(
-            name: "Archivable",
+            name: "Cloud",
             path: "Sources"),
         .testTarget(
             name: "Tests",
-            dependencies: ["Archivable"],
+            dependencies: ["Cloud"],
             path: "Tests")
     ]
 )

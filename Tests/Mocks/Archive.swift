@@ -1,5 +1,5 @@
 import Foundation
-import Archivable
+import Cloud
 
 struct Archive: Arch {
     var counter: Int

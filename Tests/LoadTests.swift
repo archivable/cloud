@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import Archivable
+@testable import Cloud
 
 final class LoadTests: XCTestCase {
     private var container: MockContainer!

@@ -1,5 +1,5 @@
 import XCTest
-import Archivable
+import Cloud
 
 final class DataTests: XCTestCase {
     func testString() {

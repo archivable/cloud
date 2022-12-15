@@ -1,5 +1,5 @@
 import XCTest
-@testable import Archivable
+@testable import Cloud
 
 final class WrapperTests: XCTestCase {
     func testTimestamp() async {

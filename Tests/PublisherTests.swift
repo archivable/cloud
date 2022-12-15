@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import Archivable
+@testable import Cloud
 
 final class PublisherTests: XCTestCase {
     private var cloud: Cloud<Archive>!
