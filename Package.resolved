@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "store",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/archivable/store.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "16aee646a2e7bb5151aa394091d32f4be1e8fb7e"
+      }
+    }
+  ],
+  "version" : 2
+}

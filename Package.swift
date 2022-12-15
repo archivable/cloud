@@ -14,9 +14,14 @@ let package = Package(
             name: "Cloud",
             targets: ["Cloud"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/archivable/store.git", branch: "main"),
+    ],
     targets: [
         .target(
             name: "Cloud",
+            dependencies: [
+                .product(name: "Store", package: "store")],
             path: "Sources"),
         .testTarget(
             name: "Tests",

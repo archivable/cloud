@@ -1,4 +1,5 @@
 import Foundation
+import Store
 
 private let header = "wrapper"
 private let firmware = UInt8()
